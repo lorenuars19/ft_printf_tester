@@ -22,7 +22,7 @@ ft_printf_main_file=.test.ft_printf.c
 MAX_RND_CHARS=1000
 
 # SEQUENCE
-MAX_ITEMS=42
+MAX_SEQ_ITEMS=420
 # RND_FLAGS
 MAX_NUM=50
 NUM_CONV="iduxX"
@@ -31,6 +31,13 @@ CHR_CONV='c'
 PTR_CONV='p'
 
 # ================================= Functions =================================#
+function write_files() 
+{
+    write_main_ft_printf
+    write_main_printf
+    write_header_file
+}
+
 function write_main_printf()
 {
     rm -f $printf_main_file
@@ -134,14 +141,7 @@ function write_header_file_macro()
 
 function gen_flag ()
 {
-    local tmp_flag='%'
-    local is_percent=$(($RANDOM%5))
-    if [[ $is_percent -eq 1 ]]
-    then
-        tmp_flag+='%'
-        flag=$tmp_flag
-        return 0
-    fi
+    flag=''
 
     local conv=''
     case $1 in
@@ -153,8 +153,24 @@ function gen_flag ()
         *) return 1 ;;
     esac
 
+    local tmp_flag='%'
+    local is_percent=$(($RANDOM%5))
+    if [[ $is_percent -eq 1 ]]
+    then
+        tmp_flag+='%'
+        flag=$tmp_flag
+        return 0
+    fi
+
     local has_prs=$(($RANDOM%2))
+    local zero_space_nothing=$(($RANDOM%3))
     
+    if [[ $zero_space_nothing -eq 1 ]] ; then
+        tmp_flag+=' '
+    elif [[ $zero_space_nothing -eq 0 ]] ; then
+        tmp_flag+='0'
+    fi
+
     tmp_flag+=$(($RANDOM%$MAX_NUM))
     if [[ $has_prs -eq 1 ]]
     then
@@ -167,9 +183,10 @@ function gen_flag ()
 
 function gen_sequence ()
 {
-    local max_items=$(($RANDOM%$MAX_ITEMS))
-    items=( rnd num str chr ptr)
-    sequence=()
+    local max_items=$(($RANDOM%$MAX_SEQ_ITEMS))
+    items=( rnd num str chr ptr )
+
+    echo max_items : $max_items
     for (( it=0; it<max_items; it++ ))
     do
         sequence+=(${items[$(($RANDOM % $((${#items}+1))))]})
@@ -178,11 +195,17 @@ function gen_sequence ()
 
 # ================================== Program ================================= #
 
-write_main_ft_printf
-write_main_printf
-write_header_file
+write_files
 
 gen_sequence
+
+for ((se=0;se<${#sequence};se++))
+do
+    gen_flag ${sequence[$se]}
+    printf "Seq["%04d"] %s %-17s\t\t" $se ${sequence[$se]} $flag
+done
+
+
 
 sleep .1
 rm -f $header_file $printf_main_file $ft_printf_main_file
