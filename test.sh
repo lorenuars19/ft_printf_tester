@@ -39,24 +39,47 @@ function write_header_file()
     echo "#endif" >> $header_file
 }
 
+function str_contains ()
+{
+    for (( j=0 ; j<${#1}; j++))
+    do
+        if [[ ${1:$j:1} == $2 ]]
+        then
+            return 1
+        fi
+    done
+    return 0
+}
+
 function write_rnd_chars()
 {
-    n_rand_chars=$((RANDOM%$1))
+    local n_rand_chars=$((RANDOM%$1))
 
-    excluded_chars="\'\"\n\\\v"
+    local excluded_chars=$'\n\\\'\"/'
 
-    for (( i=0; i<= n_rand_chars; ))
+    local char_min=$((20))
+    local char_max=$((127-char_min-2))
+    for (( i=0; i<= n_rand_chars; i++))
     do
-        tmp=$(printf "$(printf \\%2o $(($RANDOM%127)) )" )
+        tmp=$(printf "$(printf \\%1o $((char_min + $RANDOM % char_max)) )" )
         dummy=$RANDOM
+        
 
-        if [[ $tmp =~ ${excluded_chars} ]]
+    local print=50
+        if ! str_contains  $excluded_chars $tmp
         then
-             echo "Match" $tmp
+
+            if [[ $((i%print)) -eq 1 ]]
+            then
+                #printf "\033[31m-\033[m\n"
+            fi
+            i=$((i-1))
         else
-           echo "OK"
+            if [[ $((i%print)) -eq 1 ]]
+            then
+                printf "\033[32m+\033[m"
+            fi
             macro+=$tmp
-            $((i++))
         fi
 
     done
@@ -67,13 +90,14 @@ function write_header_file_macro()
 {
     macro="# define TEST \""
    
-    write_rnd_chars 500
+    write_rnd_chars 50
 
     macro+="\""
 
     echo $macro >> $header_file
-    echo $macro
+    echo $'\n'$macro
 }
 
 write_header_file
 
+rm -f $header_file
