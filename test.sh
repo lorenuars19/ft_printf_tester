@@ -13,32 +13,34 @@
 # **************************************************************************** #
 
 # =============================== Global variables ============================#
-header_file=.test.header.h
-printf_main_file=.test.printf.c
-ft_printf_main_file=.test.ft_printf.c
-
+WD=.42_Test_42_Logs_Here
+no_dir_header_file=42.HeAdEr.h
+header_file=$WD/$no_dir_header_file
+printf_main_file=$WD/42.PrInTf.c
+ft_printf_main_file=$WD/42.Ft_PrInTf.c
+printf_diff_file=$WD/42.pRiNtF.DiFf
+ft_printf_diff_file=$WD/42.Ft_PrInTf.DiFf
+printf_exec_file=$WD/printf.exe
+ft_printf_exec_file=$WD/ft_printf.exe
 
 # RND_CHARS
-MAX_RND_CHARS=1000
+MAX_RND_CHARS=42
 
 # SEQUENCE
-MAX_SEQ_ITEMS=420
+MAX_SEQ_ITEMS=42
+
 # RND_FLAGS
-MAX_NUM=50
+FLAG_NUM_MAX=50
 NUM_CONV="iduxX"
 STR_CONV='s'
 CHR_CONV='c'
 PTR_CONV='p'
 
-# ================================= Functions =================================#
-function write_files() 
-{
-    write_main_ft_printf
-    write_main_printf
-    write_header_file
-}
+# RND_VARS
+VARS_NUM_MAX=10000
 
-function write_main_printf()
+# ================================= Functions =================================#
+function write_main_files() 
 {
     rm -f $printf_main_file
     echo "/*" >> $printf_main_file
@@ -47,7 +49,7 @@ function write_main_printf()
     echo "** by : lorenuar" >> $printf_main_file
     echo "*/" >> $printf_main_file
     echo "" >> $printf_main_file
-    echo "#include \"$header_file"\" >> $printf_main_file
+    echo "#include \"$no_dir_header_file"\" >> $printf_main_file
     echo "" >> $printf_main_file
     echo "int"$'\t'"main(void)" >> $printf_main_file
     echo "{" >> $printf_main_file
@@ -55,10 +57,7 @@ function write_main_printf()
     echo $'\t'"return (0);" >> $printf_main_file
     echo "}" >> $printf_main_file
     echo "" >> $printf_main_file
-}
 
-function write_main_ft_printf()
-{
     rm -f $ft_printf_main_file
     echo "/*" >> $ft_printf_main_file
     echo "** Main for testing your ft_printf" >> $ft_printf_main_file
@@ -66,7 +65,7 @@ function write_main_ft_printf()
     echo "** by : lorenuar" >> $ft_printf_main_file
     echo "*/" >> $ft_printf_main_file
     echo "" >> $ft_printf_main_file
-    echo "#include \"$header_file"\" >> $ft_printf_main_file
+    echo "#include \"$no_dir_header_file"\" >> $ft_printf_main_file
     echo "" >> $ft_printf_main_file
     echo "int"$'\t'"main(void)" >> $ft_printf_main_file
     echo "{" >> $ft_printf_main_file
@@ -91,10 +90,6 @@ function write_header_file()
     echo "//# include \"ft_printf.h\"" >> $header_file
     echo "# include <stdio.h>" >> $header_file
     echo "" >> $header_file
-    
-    write_header_file_macro
-    
-    echo "#endif" >> $header_file
 }
 
 function str_contains ()
@@ -121,22 +116,10 @@ function rnd_chars()
       
         if [[ $((i%print)) -eq 0 ]]
         then
-            printf +
+            #printf +
         fi
-        macro+=$tmp
+        flag+=$tmp
     done
-}
-
-function write_header_file_macro()
-{
-    macro="# define TEST \""
-
-    rnd_chars $MAX_RND_CHARS
-
-    macro+="\""
-
-    echo $macro >> $header_file
-    echo $'\n'$macro
 }
 
 function gen_flag ()
@@ -145,12 +128,12 @@ function gen_flag ()
 
     local conv=''
     case $1 in
-        rnd) return 0 ;;
-        num) conv=${NUM_CONV:${$(($RANDOM%${#NUM_CONV}))}:1} ;;
-        str) conv=$STR_CONV ;;
-        chr) conv=$CHR_CONV ;;
-        ptr) conv=$PTR_CONV ;;
-        *) return 1 ;;
+        rnd) rnd_chars $MAX_RND_CHARS; return 0;;
+        num) conv=${NUM_CONV:${$(($RANDOM%${#NUM_CONV}))}:1};;
+        str) conv=$STR_CONV;;
+        chr) conv=$CHR_CONV;;
+        ptr) conv=$PTR_CONV;;
+        *) return 1;;
     esac
 
     local tmp_flag='%'
@@ -171,41 +154,88 @@ function gen_flag ()
         tmp_flag+='0'
     fi
 
-    tmp_flag+=$(($RANDOM%$MAX_NUM))
+    tmp_flag+=$(($RANDOM%$FLAG_NUM_MAX))
     if [[ $has_prs -eq 1 ]]
     then
         tmp_flag+='.'
-        tmp_flag+=$(($RANDOM%$MAX_NUM))
+        tmp_flag+=$(($RANDOM%$FLAG_NUM_MAX))
     fi
     tmp_flag+=$conv
     flag=$tmp_flag
+}
+
+function gen_var ()
+{
+    local is_ptr=0
+
+    flag=''
+    case $1 in
+        rnd) return 1;;
+        num) flag=$(($RANDOM%$VARS_NUM_MAX)); return 0;;
+        chr) flag=$(($RANDOM%127)); return 0;;
+        str) is_ptr=1;;
+        ptr) is_ptr=1;;
+        *) return 1;;
+    esac
 }
 
 function gen_sequence ()
 {
     local max_items=$(($RANDOM%$MAX_SEQ_ITEMS))
     items=( rnd num str chr ptr )
-
-    echo max_items : $max_items
     for (( it=0; it<max_items; it++ ))
     do
         sequence+=(${items[$(($RANDOM % $((${#items}+1))))]})
     done
 }
 
+function write_sequence ()
+{
+    macro="# define TEST \""
+    gen_sequence
+    for ((se=0;se<${#sequence};se++))
+    do
+        gen_flag ${sequence[$se]}
+        #printf "Seq["%04d"] %s %s" $se ${sequence[$se]} $flag$'\n'
+        macro+=$flag
+    done
+    macro+="\", "
+    se=0
+    while (( $se<${#sequence} ))
+    do
+        gen_var ${sequence[$se]}
+        #printf "Seq["%04d"] %s %s" $se ${sequence[$se]} $flag$'\n'
+        macro+=$flag
+        se=$((se+1))
+        if [[ $se -lt ${#sequence} ]] && [[ -n $flag ]]
+        then
+            macro+=", "
+        fi
+    done
+
+    if [[ ${macro:$((${#macro}-1)):1} == ',' ]]
+    then
+        echo FOUND
+        echo ${macro}
+    fi
+
+    echo $macro >> $header_file
+    echo "#endif" >> $header_file
+    echo $'\n\n'$macro
+}
+
 # ================================== Program ================================= #
 
-write_files
+mkdir -p $WD
 
-gen_sequence
+write_main_files
+write_header_file
+write_sequence
 
-for ((se=0;se<${#sequence};se++))
-do
-    gen_flag ${sequence[$se]}
-    printf "Seq["%04d"] %s %-17s\t\t" $se ${sequence[$se]} $flag
-done
+gcc -I../ $printf_main_file -o $printf_exec_file\
+&& ./$printf_exec_file > $printf_diff_file\
+&& rm -f $printf_exec_file
+#gcc $ft_printf_main_file ; ./a.out
 
-
-
-sleep .1
-rm -f $header_file $printf_main_file $ft_printf_main_file
+#sleep 1
+#rm -f $header_file $printf_main_file $ft_printf_main_file
