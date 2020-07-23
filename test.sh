@@ -13,6 +13,9 @@
 # **************************************************************************** #
 
 # =============================== Global variables ============================#
+FT_PRINTF_HEADER_FILE=$( find . -type f -name "ft_printf.h" )
+FT_PRINTF_LIB_FILE=$(find . -name "libftprintf.a" )
+
 WD=.42_Test_42_Logs_Here
 no_dir_header_file=42.HeAdEr.h
 header_file=$WD/$no_dir_header_file
@@ -38,6 +41,7 @@ PTR_CONV='p'
 
 # RND_VARS
 VARS_NUM_MAX=10000
+STR_LEN_MAX=42
 
 # ================================= Functions =================================#
 function write_main_files() 
@@ -166,17 +170,24 @@ function gen_flag ()
 
 function gen_var ()
 {
-    local is_ptr=0
-
     flag=''
     case $1 in
-        rnd) return 1;;
+        rnd) return 0;;
         num) flag=$(($RANDOM%$VARS_NUM_MAX)); return 0;;
         chr) flag=$(($RANDOM%127)); return 0;;
-        str) is_ptr=1;;
-        ptr) is_ptr=1;;
+        str) ;;
+        ptr) ;;
         *) return 1;;
     esac
+    local is_null=$(($RANDOM%10))
+
+    if [[ is_null -eq 1 ]]
+    then
+        flag='NULL'; return 0;
+    fi
+    flag="\""
+    rnd_chars $STR_LEN_MAX
+    flag+="\""
 }
 
 function gen_sequence ()
@@ -191,6 +202,7 @@ function gen_sequence ()
 
 function write_sequence ()
 {
+    local sep=", "
     macro="# define TEST \""
     gen_sequence
     for ((se=0;se<${#sequence};se++))
@@ -199,7 +211,7 @@ function write_sequence ()
         #printf "Seq["%04d"] %s %s" $se ${sequence[$se]} $flag$'\n'
         macro+=$flag
     done
-    macro+="\", "
+    macro+="\""$sep
     se=0
     while (( $se<${#sequence} ))
     do
@@ -209,19 +221,18 @@ function write_sequence ()
         se=$((se+1))
         if [[ $se -lt ${#sequence} ]] && [[ -n $flag ]]
         then
-            macro+=", "
+            macro+=$sep
         fi
     done
 
-    if [[ ${macro:$((${#macro}-1)):1} == ',' ]]
+    if [[ ${macro:$((${#macro} - ${#sep})):${#sep}} == $sep ]]
     then
-        echo FOUND
-        echo ${macro}
+        macro=${macro:0:$((${#macro} - ${#sep}))}
     fi
 
     echo $macro >> $header_file
     echo "#endif" >> $header_file
-    echo $'\n\n'$macro
+    #echo $'\n\n'$macro
 }
 
 # ================================== Program ================================= #
@@ -232,9 +243,12 @@ write_main_files
 write_header_file
 write_sequence
 
-gcc -I../ $printf_main_file -o $printf_exec_file\
+echo $FT_PRINTF_HEADER_FILE
+
+rm -f $printf_exec_file\
+&& gcc -I../ $printf_main_file -o $printf_exec_file\
 && ./$printf_exec_file > $printf_diff_file\
-&& rm -f $printf_exec_file
+&& #cat -A $printf_diff_file
 #gcc $ft_printf_main_file ; ./a.out
 
 #sleep 1
