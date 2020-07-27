@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/bash
 
 # **************************************************************************** #
 #                                                                              #
@@ -13,20 +13,27 @@
 # **************************************************************************** #
 
 # =============================== Global variables ============================#
-FT_PRINTF_HEADER_FILE=$( find . -type f -name "ft_printf.h" )
-FT_PRINTF_LIB_FILE=$(find . -name "libftprintf.a" )
-
 WD=.42_Test_42_Logs_Here
-no_dir_header_file=42.HeAdEr.h
+LOG_DIR=$WD/.42.LOGS_HERE
+LOG_FILE=$LOG_DIR/.42.LOGS
+FT_PRINTF_HEADER_FILE=$( cd $WD && find ../ -type f -name "ft_printf.h" )
+FT_PRINTF_LIB_FILE=$( find . -name "libftprintf.a" )
+no_dir_header_file=.42.HeAdEr.h
 header_file=$WD/$no_dir_header_file
-printf_main_file=$WD/42.PrInTf.c
-ft_printf_main_file=$WD/42.Ft_PrInTf.c
-printf_diff_file=$WD/42.pRiNtF.DiFf
-ft_printf_diff_file=$WD/42.Ft_PrInTf.DiFf
-printf_exec_file=$WD/printf.exe
-ft_printf_exec_file=$WD/ft_printf.exe
+printf_main_file=$WD/.42.PrInTf.c
+ft_printf_main_file=$WD/.42.Ft_PrInTf.c
+printf_diff_file=$WD/.42.pRiNtF.DiFf
+ft_printf_diff_file=$WD/.42.Ft_PrInTf.DiFf
+printf_exec_file=$WD/.42.printf.exe
+ft_printf_exec_file=$WD/.42.ft_printf.exe
 
-_GLOBAL_MAX_=16
+_TIME_OUT=3
+
+
+_GLOBAL_MAX_=10
+
+#WITH_NEWLINES
+WITH_NEWLINES=0
 
 # RND_CHARS
 MAX_RND_CHARS=$_GLOBAL_MAX_
@@ -76,6 +83,7 @@ function write_main_files()
     echo "int"$'\t'"main(void)" >> $ft_printf_main_file
     echo "{" >> $ft_printf_main_file
     echo $'\t'"ft_printf(TEST);" >> $ft_printf_main_file
+    # echo $'\t'"printf(TEST);" >> $ft_printf_main_file
     echo $'\t'"return (0);" >> $ft_printf_main_file
     echo "}" >> $ft_printf_main_file
     echo "" >> $ft_printf_main_file
@@ -92,10 +100,12 @@ function write_header_file()
     echo "*/" >> $header_file
 
     echo "" >> $header_file
-    echo "#ifndef TEST_HEADER_H" >> $header_file
-    echo "//# include \"ft_printf.h\"" >> $header_file
+    echo "#ifndef HEADER_H" >> $header_file
+    echo "# include \""$FT_PRINTF_HEADER_FILE"\"" >> $header_file
     echo "# include <stdio.h>" >> $header_file
     echo "" >> $header_file
+
+    write_sequence
 }
 
 function str_contains ()
@@ -167,15 +177,16 @@ function gen_flag ()
 function gen_var ()
 {
     flag=''
+    local is_null=$(($RANDOM%10))
     case $1 in
         rnd) return 0;;
         num) flag=$(($RANDOM%$VARS_NUM_MAX)); return 0;;
         chr) flag=$(($RANDOM%127)); return 0;;
         str) ;;
-        ptr) flag=$(($RANDOM%$((VARS_NUM_MAX*100))));;
+        #ptr) flag=$(($RANDOM%$((VARS_NUM_MAX*100))));;
+        ptr) is_null=1;;
         *) return 1;;
     esac
-    local is_null=$(($RANDOM%10))
 
     if [[ is_null -eq 1 ]]
     then
@@ -188,7 +199,8 @@ function gen_var ()
 
 function gen_sequence ()
 {
-    local max_items=$(($RANDOM%$MAX_SEQ_ITEMS))
+    local max_items=$((1+$RANDOM%$MAX_SEQ_ITEMS))
+    # echo items : $max_items
     items=(rnd num str chr ptr per)
     local index=$((RANDOM % $((${#items} + 1)) ))
     sequence=(${items[$index]})
@@ -209,7 +221,10 @@ function write_sequence ()
         gen_flag ${sequence[$se]}
         #printf "Seq["%04d"] %s %s" $se ${sequence[$se]} $flag$'\n'
         macro+=$flag
-        macro+="\\\\n"
+        if [[ WITH_NEWLINES -eq 1 ]]
+        then
+            macro+="\\n"
+        fi
     done
     macro+="\""$sep
     se=0
@@ -230,25 +245,74 @@ function write_sequence ()
     fi
     echo $macro >> $header_file
     echo "#endif" >> $header_file
-    echo $'\n\n'$macro
+}
+
+function run_test ()
+{
+    write_header_file
+
+    rm -f $printf_exec_file\
+    && gcc -I../ $printf_main_file -o $printf_exec_file
+     if timeout $_TIME_OUT ./$printf_exec_file > $printf_diff_file
+    then
+        echo >> $printf_diff_file
+        
+    else
+        printf "\rTEST : %-6d \033[31m STDIO PRINTF TIME OUT\033[m\n" $test_n
+        printf "\n= = = TEST : %-6d STDIO PRINTF TIMEOUT\n" $test_n >> $LOG_FILE
+
+        exit 1
+    fi
+    
+    rm -f $ft_printf_exec_file\
+    && gcc -I../ $ft_printf_main_file $FT_PRINTF_LIB_FILE -o $ft_printf_exec_file
+    if timeout $_TIME_OUT ./$ft_printf_exec_file > $ft_printf_diff_file
+    then
+        echo >> $ft_printf_diff_file
+        
+    else
+        printf "\rTEST : %-6d \033[31m TIME OUT\033[m\n" $test_n
+        printf "\n= = = TEST : %-6d TIME OUT\n" $test_n >> $LOG_FILE
+        return 1
+    fi
+
+    printf "\n= = = TEST : %-6d = =\n" $test_n >> $LOG_FILE
+    echo $macro >> $LOG_FILE
+
+    printf "TEST : %-6d" $test_n
+    
+    diff -u --label FT_42 $ft_printf_diff_file\
+ --label STDIO $printf_diff_file >> $LOG_FILE
+
+    if [[ $? -eq 0 ]]
+    then
+        printf "\rTEST : %-6d \033[32m + OK +\033[m\n" $test_n
+        echo OK >> $LOG_FILE
+    else
+        printf "\rTEST : %-6d \033[31m ! KO !\033[m\n" $test_n
+        echo $macro
+        diff --color=always -u --label FT_42 $ft_printf_diff_file\
+ --label STDIO $printf_diff_file
+        return 2
+    fi
+
 }
 
 # ================================== Program ================================= #
 
-mkdir -p $WD
+mkdir -p $WD $LOG_DIR
+rm -f $LOG_FILE
 
 write_main_files
-write_header_file
-write_sequence
 
-echo $FT_PRINTF_HEADER_FILE
-
-rm -f $printf_exec_file\
-&& gcc -I../ $printf_main_file -o $printf_exec_file\
-&& ./$printf_exec_file > $printf_diff_file\
-&& cat -A $printf_diff_file
-
-#gcc $ft_printf_main_file ; ./a.out
+for (( test_n=1;test_n<=$1; test_n++ ))
+do
+    run_test $test_n
+    if [[ $? -eq 1 ]]
+    then
+        exit 1
+    fi
+done
 
 #sleep 1
 #rm -f $header_file $printf_main_file $ft_printf_main_file
