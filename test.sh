@@ -14,7 +14,8 @@
 
 # =============================== Global variables =========================== #
 # = = = = = = = = = = = = = = = YOU CAN TWEAK THESES = = = = = = = = = = = = = #
-_VERBOSE=1
+# Specify the verbose level : 0 = pretty , 1 = minimal, 2 = full info 
+_VERBOSE=0
 # The time out for execution of tests
 _TIME_OUT=5
 # The global max for fast tweaking of below maximums
@@ -39,20 +40,21 @@ STR_LEN_MAX=$_GLOBAL_MAX_
 
 # ============================================================================ #
 WD=.42_Test_42_Logs_Here        # The 'Working Directory'
-LOG_DIR=$WD/.42.LOGS_HERE       # The LOGS Directory
-LOG_FILE=$LOG_DIR/.42.LOGS      # The LOGS file
+LOG_DIR=$WD/42.LOGS_HERE       	# The LOGS Directory
+LOG_FILE=$LOG_DIR/42.LOGS      	# The LOGS file
+LOG_DISPLAY_FILE=$WD/42.KO_LOGS.42.sh
 # Here you can see how the script searches for your input files
 FT_PRINTF_HEADER_FILE=$( mkdir -p $WD && cd $WD && find ../ -type f -name "ft_printf.h" )
 FT_PRINTF_LIB_FILE=$( find . -name "libftprintf.a" )
 # Down here are all the file names WITH 42's E V E R Y W H E R E
-no_dir_header_file=.42.HeAdEr.h
+no_dir_header_file=42.HeAdEr.h
 header_file=$WD/$no_dir_header_file
-printf_main_file=$WD/.42.PrInTf.c
-ft_printf_main_file=$WD/.42.Ft_PrInTf.c
-printf_diff_file=$WD/.42.pRiNtF.DiFf
-ft_printf_diff_file=$WD/.42.Ft_PrInTf.DiFf
-printf_exec_file=$WD/.42.printf.exe
-ft_printf_exec_file=$WD/.42.ft_printf.exe
+printf_main_file=$WD/42.PrInTf.c
+ft_printf_main_file=$WD/42.Ft_PrInTf.c
+printf_diff_file=$WD/42.pRiNtF.DiFf
+ft_printf_diff_file=$WD/42.Ft_PrInTf.DiFf
+printf_exec_file=$WD/42.printf.exe
+ft_printf_exec_file=$WD/42.ft_printf.exe
 
 # ================================= Functions =================================#
 function write_main_files() 
@@ -260,6 +262,8 @@ function run_test ()
         printf "\rTEST : %-6d \033[31;1m STDIO PRINTF TIME OUT or EXEC ERROR\033[m\n" $test_n
         printf "\n= = = TEST : %-6d STDIO PRINTF TIMEOUT or EXEC ERROR\n" \
 $test_n >> $LOG_FILE"_"$test_n
+		echo $macro >> $LOG_FILE"_"$test_n
+		cat $LOG_FILE"_"$test_n
         exit 1
     fi
     rm -f $ft_printf_exec_file
@@ -272,48 +276,71 @@ $test_n >> $LOG_FILE"_"$test_n
     then
         echo >> $ft_printf_diff_file
     else
-        printf "\rTEST : %-6d \033[31;1m TIME OUT or EXEC ERROR\033[m\n" $test_n
-        printf "\n= = = TEST : %-6d TIME OUT or EXEC ERROR\n" $test_n >> $LOG_FILE"_"$test_n
+        printf "\rTEST : %-6d \033[31;1m FT_printf TIME OUT or EXEC \
+ERROR\033[m\n" $test_n
+        printf "\n= = = TEST : %-6d FT_printf TIME OUT or EXEC \
+ERROR\n" $test_n >> $LOG_FILE"_"$test_n
+		echo $macro >> $LOG_FILE"_"$test_n
         return 1
     fi
-    printf "= = = TEST : %-6d = =\n" $test_n >> $LOG_FILE"_"$test_n
+    printf "\n= = = TEST : %-6d = =\n" $test_n >> $LOG_FILE"_"$test_n
     echo $macro >> $LOG_FILE"_"$test_n
-	if [[ $_VERBOSE -eq 1 ]] ; then printf "TEST : %-6d" $test_n ; fi
+	if [[ $_VERBOSE -eq 1 ]]
+	then 
+		printf "TEST% 6d : " $test_n
+	fi
     diff -s -u --label FT_42 $ft_printf_diff_file\
  --label STDIO $printf_diff_file >> $LOG_FILE"_"$test_n
     if [[ $? -eq 0 ]]
     then
-		if [[ $_VERBOSE -eq 1 ]]
+		if [[ $_VERBOSE -ge 1 ]]
 		then
-        	printf "\rTEST : %-6d \033[32;1m + OK +\033[m\n" $test_n
-			#echo $macro
+        	printf "\033[32;1m + OK +\033[m\n" $test_n
 			cat $ft_printf_diff_file >> $LOG_FILE"_"$test_n
-        	echo OK >> $LOG_FILE"_"$test_n
+			if [[ $_VERBOSE -ge 2 ]]
+			then
+				echo $macro
+				cat $ft_printf_diff_file
+			fi
+		elif [[ $_VERBOSE -eq 0 ]]; then
+			printf "\033[32;1m*\033[m"
 		fi
+        echo OK >> $LOG_FILE"_"$test_n
 		OK_NUM=$((OK_NUM + 1))
+		return 0
     else
-		if [[ $_VERBOSE -eq 1 ]]
+		if [[ $_VERBOSE -ge 1 ]]
 		then
-        	printf "\rTEST : %-6d \033[31;1m ! KO !\033[m\n" $test_n
-    		echo $macro
-        	diff --color=always -u --label FT_42 $ft_printf_diff_file\
+        	printf "\033[31;1m ! KO !\033[m\n" $test_n
+			if [[ $_VERBOSE -ge 2 ]]
+			then
+    			echo $macro
+        		diff --color=always -u --label FT_42 $ft_printf_diff_file\
  --label STDIO $printf_diff_file
+			fi
+		elif [[ $_VERBOSE -eq 0 ]]; then
+			printf "\033[31;1m!%-6d\033[m" $test_n
 		fi
-		KO_NUM=$((KO_NUM + 1))	
+		KO_NUM=$((KO_NUM + 1))
+		return 2
     fi
 }
 
-function cleanup ()
+function print_summary ()
 {
 	local percent_ko=$(perl -e 'print '${KO_NUM}'.0 / '${test_n}'.0 * 100' )
-	printf "\nSummary : \033[32;1m%6d OK \033[31;1m%6d KO \033[37;1m%6d TOTAL\033[m\n" $OK_NUM $KO_NUM $test_n
+	printf "\nSummary : \033[32;1m%6d OK \033[31;1m%6d KO \033[37;1m%6d TOTAL\033[m\t" $OK_NUM $KO_NUM $test_n
 	if [[ ${percent_ko//.*} -lt 40 ]]
 	then 
 		printf "\033[32;1mPercent KO : %f%%\033[m\n" $percent_ko
 	else
 		printf "\033[31;1mPercent KO : %f%%\033[m\n" $percent_ko
 	fi
+}
 
+function cleanup ()
+{
+	print_summary
     rm -f $printf_diff_file $printf_exec_file $printf_main_file \
     $ft_printf_diff_file $ft_printf_exec_file $ft_printf_main_file
     exit
@@ -327,7 +354,7 @@ then
     exit 1
 fi
 # Set up cleanup
-trap cleanup SIGINT EXIT
+trap cleanup SIGINT EXIT SIGSEGV SIGABRT SIGBUS
 # Create Working Directory
 mkdir -p $WD $LOG_DIR
 # Delete old LOGS
@@ -337,12 +364,29 @@ write_main_files
 # Run the tests
 OK_NUM=0
 KO_NUM=0
+declare -a KO_ARR
 for (( test_n=0;test_n<$1; test_n++ ))
 do
     run_test $test_n
-    if [[ $? -eq 1 ]]
+	status=$?
+    if [[ $status -eq 1 ]]
     then
         exit 1
+	elif [[ $status -eq 2 ]]
+	then
+		KO_ARR+=( $LOG_FILE"_"$test_n )
     fi
 done
-# printf "Summary \033[32;1m%-6d OK \033[31;1m%-6d KO \033[30;1m%-6d TOTAL\033[m\n" $OK_NUM $KO_NUM $1
+print_summary
+rm -f $LOG_DISPLAY_FILE \
+&& echo "cat "${KO_ARR[@]}" | less" > $LOG_DISPLAY_FILE \
+&& chmod 775 $LOG_DISPLAY_FILE
+
+while true; do
+    read -p "Do you want to display all the logs of the failed tests in less ?" yn
+    case $yn in
+        [Yy]* ) ./$LOG_DISPLAY_FILE; break;;
+        [Nn]* ) exit;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
