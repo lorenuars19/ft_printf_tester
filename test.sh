@@ -14,8 +14,9 @@
 
 # =============================== Global variables =========================== #
 # = = = = = = = = = = = = = = = YOU CAN TWEAK THESES = = = = = = = = = = = = = #
+_VERBOSE=1
 # The time out for execution of tests
-_TIME_OUT=3
+_TIME_OUT=5
 # The global max for fast tweaking of below maximums
 _GLOBAL_MAX_=10
 # 1 = add newlines add '\n' between each items in the sequence
@@ -58,53 +59,56 @@ function write_main_files()
 {   
     # Writes the main for STDIO Printf
     rm -f $printf_main_file
-    echo "/*" >> $printf_main_file
-    echo "** Main for testing the stdio printf" >> $printf_main_file
-    echo "**" >> $printf_main_file
-    echo "** by : lorenuar" >> $printf_main_file
-    echo "*/" >> $printf_main_file
-    echo "" >> $printf_main_file
-    echo "#include \"$no_dir_header_file"\" >> $printf_main_file
-    echo "" >> $printf_main_file
-    echo "int"$'\t'"main(void)" >> $printf_main_file
-    echo "{" >> $printf_main_file
-    echo $'\t'"printf(TEST);" >> $printf_main_file
-    echo $'\t'"return (0);" >> $printf_main_file
-    echo "}" >> $printf_main_file
-    echo "" >> $printf_main_file
+    echo "\
+/*
+** Main for testing the stdio printf
+**
+** by : lorenuar
+*/
+
+#include \"$no_dir_header_file\"
+
+int		main(void)
+{
+	printf(TEST);
+	return (0);
+}
+" >> $printf_main_file
     # Writes the main for your ft_printf 
     rm -f $ft_printf_main_file
-    echo "/*" >> $ft_printf_main_file
-    echo "** Main for testing your ft_printf" >> $ft_printf_main_file
-    echo "**" >> $ft_printf_main_file
-    echo "** by : lorenuar" >> $ft_printf_main_file
-    echo "*/" >> $ft_printf_main_file
-    echo "" >> $ft_printf_main_file
-    echo "#include \"$no_dir_header_file"\" >> $ft_printf_main_file
-    echo "" >> $ft_printf_main_file
-    echo "int"$'\t'"main(void)" >> $ft_printf_main_file
-    echo "{" >> $ft_printf_main_file
-    echo $'\t'"ft_printf(TEST);" >> $ft_printf_main_file
-    echo $'\t'"return (0);" >> $ft_printf_main_file
-    echo "}" >> $ft_printf_main_file
-    echo "" >> $ft_printf_main_file
+    echo "\
+/*
+** Main for testing your ft_printf
+**
+** by : lorenuar
+*/
+
+#include \"$no_dir_header_file\"
+
+int		main(void)
+{
+	ft_printf(TEST);
+	return (0);
+}
+" >> $ft_printf_main_file
 }
 
 function write_header_file()
 {
     # Writes the header file
     rm -f $header_file
-    echo "/*" >> $header_file
-    echo "** Header file which contains the macro to test" >> $header_file
-    echo "** the outputs of your ft_printf and stdio printf" >> $header_file
-    echo "**" >> $header_file
-    echo "** by : lorenuar" >> $header_file
-    echo "*/" >> $header_file
-    echo "" >> $header_file
-    echo "#ifndef HEADER_H" >> $header_file
-    echo "# include \""$FT_PRINTF_HEADER_FILE"\"" >> $header_file
-    echo "# include <stdio.h>" >> $header_file
-    echo "" >> $header_file
+    echo "\
+/*
+** Header file which contains the macro to test
+** the outputs of your ft_printf and stdio printf
+**
+** by : lorenuar
+*/
+
+#ifndef HEADER_H
+# include \"$FT_PRINTF_HEADER_FILE\"
+# include <stdio.h>
+" >> $header_file
     # This is where all the magic happens (jump to line 215)
     write_sequence
 }
@@ -184,7 +188,6 @@ function gen_var ()
         num) flag=$(($RANDOM%$VARS_NUM_MAX)); return 0;;
         chr) flag=$(($RANDOM%127)); return 0;;
         str) ;;
-        #ptr) flag=$(($RANDOM%$((VARS_NUM_MAX*100))));;
         ptr) is_null=1;;
         *) return 1;;
     esac
@@ -273,48 +276,68 @@ $test_n >> $LOG_FILE"_"$test_n
         printf "\n= = = TEST : %-6d TIME OUT or EXEC ERROR\n" $test_n >> $LOG_FILE"_"$test_n
         return 1
     fi
-    printf "\n= = = TEST : %-6d = =\n" $test_n >> $LOG_FILE"_"$test_n
+    printf "= = = TEST : %-6d = =\n" $test_n >> $LOG_FILE"_"$test_n
     echo $macro >> $LOG_FILE"_"$test_n
-    printf "TEST : %-6d" $test_n
-    diff -u --label FT_42 $ft_printf_diff_file\
+	if [[ $_VERBOSE -eq 1 ]] ; then printf "TEST : %-6d" $test_n ; fi
+    diff -s -u --label FT_42 $ft_printf_diff_file\
  --label STDIO $printf_diff_file >> $LOG_FILE"_"$test_n
     if [[ $? -eq 0 ]]
     then
-        printf "\rTEST : %-6d \033[32;1m + OK +\033[m\n" $test_n
-        echo OK >> $LOG_FILE"_"$test_n
+		if [[ $_VERBOSE -eq 1 ]]
+		then
+        	printf "\rTEST : %-6d \033[32;1m + OK +\033[m\n" $test_n
+			#echo $macro
+			cat $ft_printf_diff_file >> $LOG_FILE"_"$test_n
+        	echo OK >> $LOG_FILE"_"$test_n
+		fi
+		OK_NUM=$((OK_NUM + 1))
     else
-        printf "\rTEST : %-6d \033[31;1m ! KO !\033[m\n" $test_n
-        echo $macro
-        diff --color=always -u --label FT_42 $ft_printf_diff_file\
+		if [[ $_VERBOSE -eq 1 ]]
+		then
+        	printf "\rTEST : %-6d \033[31;1m ! KO !\033[m\n" $test_n
+    		echo $macro
+        	diff --color=always -u --label FT_42 $ft_printf_diff_file\
  --label STDIO $printf_diff_file
-        return 2
+		fi
+		KO_NUM=$((KO_NUM + 1))	
     fi
 }
 
 function cleanup ()
 {
-    printf "\033[33mCleaning my mess,\nBye\033[m\n"
+	local percent_ko=$(perl -e 'print '${KO_NUM}'.0 / '${test_n}'.0 * 100' )
+	printf "\nSummary : \033[32;1m%6d OK \033[31;1m%6d KO \033[37;1m%6d TOTAL\033[m\n" $OK_NUM $KO_NUM $test_n
+	if [[ ${percent_ko//.*} -lt 40 ]]
+	then 
+		printf "\033[32;1mPercent KO : %f%%\033[m\n" $percent_ko
+	else
+		printf "\033[31;1mPercent KO : %f%%\033[m\n" $percent_ko
+	fi
+
     rm -f $printf_diff_file $printf_exec_file $printf_main_file \
     $ft_printf_diff_file $ft_printf_exec_file $ft_printf_main_file
     exit
 }
 
 # ================================== Program ================================= #
-
+# Arg check
 if [[ $# -ne 1 ]]
 then
     echo "Usage $0 [Number of tests to run]"
     exit 1
 fi
-
+# Set up cleanup
 trap cleanup SIGINT EXIT
-
+# Create Working Directory
 mkdir -p $WD $LOG_DIR
+# Delete old LOGS
 rm -f $LOG_FILE*
-
+# Write files
 write_main_files
-
-for (( test_n=1;test_n<=$1; test_n++ ))
+# Run the tests
+OK_NUM=0
+KO_NUM=0
+for (( test_n=0;test_n<$1; test_n++ ))
 do
     run_test $test_n
     if [[ $? -eq 1 ]]
@@ -322,3 +345,4 @@ do
         exit 1
     fi
 done
+# printf "Summary \033[32;1m%-6d OK \033[31;1m%-6d KO \033[30;1m%-6d TOTAL\033[m\n" $OK_NUM $KO_NUM $1
