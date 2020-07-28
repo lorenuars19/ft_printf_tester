@@ -33,7 +33,7 @@ CHR_CONV='c'
 PTR_CONV='p'
 # Max number for generated numbers variables
 VARS_NUM_MAX=10000
-# Max lenght for generated string variables
+# Max length for generated string variables
 STR_LEN_MAX=$_GLOBAL_MAX_
 
 # ============================================================================ #
@@ -286,7 +286,7 @@ $test_n >> $LOG_FILE"_"$test_n
         diff --color=always -u --label FT_42 $ft_printf_diff_file\
  --label STDIO $printf_diff_file
         return 1
-    fi
+    fix
 }
 
 function cleanup ()
