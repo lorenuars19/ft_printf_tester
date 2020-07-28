@@ -12,12 +12,38 @@
 #                                                                              #
 # **************************************************************************** #
 
-# =============================== Global variables ============================#
-WD=.42_Test_42_Logs_Here
-LOG_DIR=$WD/.42.LOGS_HERE
-LOG_FILE=$LOG_DIR/.42.LOGS
+# =============================== Global variables =========================== #
+# = = = = = = = = = = = = = = = YOU CAN TWEAK THESES = = = = = = = = = = = = = #
+# The time out for execution of tests
+_TIME_OUT=3
+# The global max for fast tweaking of below maximums
+_GLOBAL_MAX_=10
+# 1 = add newlines add '\n' between each items in the sequence
+WITH_NEWLINES=0
+# Max number of generated chars
+MAX_RND_CHARS=$_GLOBAL_MAX_
+# Max number of sequence items
+MAX_SEQ_ITEMS=$_GLOBAL_MAX_
+# Max number for flag params
+FLAG_NUM_MAX=$_GLOBAL_MAX_
+# conversions
+NUM_CONV="iduxX"
+STR_CONV='s'
+CHR_CONV='c'
+PTR_CONV='p'
+# Max number for generated numbers variables
+VARS_NUM_MAX=10000
+# Max lenght for generated string variables
+STR_LEN_MAX=$_GLOBAL_MAX_
+
+# ============================================================================ #
+WD=.42_Test_42_Logs_Here        # The 'Working Directory'
+LOG_DIR=$WD/.42.LOGS_HERE       # The LOGS Directory
+LOG_FILE=$LOG_DIR/.42.LOGS      # The LOGS file
+# Here you can see how the script searches for your input files
 FT_PRINTF_HEADER_FILE=$( cd $WD && find ../ -type f -name "ft_printf.h" )
 FT_PRINTF_LIB_FILE=$( find . -name "libftprintf.a" )
+# Down here are all the file names WITH 42's E V E R Y W H E R E
 no_dir_header_file=.42.HeAdEr.h
 header_file=$WD/$no_dir_header_file
 printf_main_file=$WD/.42.PrInTf.c
@@ -27,34 +53,10 @@ ft_printf_diff_file=$WD/.42.Ft_PrInTf.DiFf
 printf_exec_file=$WD/.42.printf.exe
 ft_printf_exec_file=$WD/.42.ft_printf.exe
 
-_TIME_OUT=3
-
-
-_GLOBAL_MAX_=10
-
-#WITH_NEWLINES
-WITH_NEWLINES=0
-
-# RND_CHARS
-MAX_RND_CHARS=$_GLOBAL_MAX_
-
-# SEQUENCE
-MAX_SEQ_ITEMS=$_GLOBAL_MAX_
-
-# RND_FLAGS
-FLAG_NUM_MAX=$_GLOBAL_MAX_
-NUM_CONV="iduxX"
-STR_CONV='s'
-CHR_CONV='c'
-PTR_CONV='p'
-
-# RND_VARS
-VARS_NUM_MAX=10000
-STR_LEN_MAX=$_GLOBAL_MAX_
-
 # ================================= Functions =================================#
 function write_main_files() 
-{
+{   
+    # Writes the main for STDIO Printf
     rm -f $printf_main_file
     echo "/*" >> $printf_main_file
     echo "** Main for testing the stdio printf" >> $printf_main_file
@@ -70,7 +72,7 @@ function write_main_files()
     echo $'\t'"return (0);" >> $printf_main_file
     echo "}" >> $printf_main_file
     echo "" >> $printf_main_file
-
+    # Writes the main for your ft_printf 
     rm -f $ft_printf_main_file
     echo "/*" >> $ft_printf_main_file
     echo "** Main for testing your ft_printf" >> $ft_printf_main_file
@@ -83,7 +85,6 @@ function write_main_files()
     echo "int"$'\t'"main(void)" >> $ft_printf_main_file
     echo "{" >> $ft_printf_main_file
     echo $'\t'"ft_printf(TEST);" >> $ft_printf_main_file
-    # echo $'\t'"printf(TEST);" >> $ft_printf_main_file
     echo $'\t'"return (0);" >> $ft_printf_main_file
     echo "}" >> $ft_printf_main_file
     echo "" >> $ft_printf_main_file
@@ -91,6 +92,7 @@ function write_main_files()
 
 function write_header_file()
 {
+    # Writes the header file
     rm -f $header_file
     echo "/*" >> $header_file
     echo "** Header file which contains the macro to test" >> $header_file
@@ -98,13 +100,12 @@ function write_header_file()
     echo "**" >> $header_file
     echo "** by : lorenuar" >> $header_file
     echo "*/" >> $header_file
-
     echo "" >> $header_file
     echo "#ifndef HEADER_H" >> $header_file
     echo "# include \""$FT_PRINTF_HEADER_FILE"\"" >> $header_file
     echo "# include <stdio.h>" >> $header_file
     echo "" >> $header_file
-
+    # This is where all the magic happens (jump to line 215)
     write_sequence
 }
 
@@ -200,7 +201,6 @@ function gen_var ()
 function gen_sequence ()
 {
     local max_items=$((1+$RANDOM%$MAX_SEQ_ITEMS))
-    # echo items : $max_items
     items=(rnd num str chr ptr per)
     local index=$((RANDOM % $((${#items} + 1)) ))
     sequence=(${items[$index]})
@@ -219,7 +219,6 @@ function write_sequence ()
     for (( se=0 ; se<${#sequence} ; se++ ))
     do
         gen_flag ${sequence[$se]}
-        #printf "Seq["%04d"] %s %s" $se ${sequence[$se]} $flag$'\n'
         macro+=$flag
         if [[ WITH_NEWLINES -eq 1 ]]
         then
@@ -231,7 +230,6 @@ function write_sequence ()
     while (( $se<${#sequence} ))
     do
         gen_var ${sequence[$se]}
-        #printf "Seq["%04d"] %s %s" $se ${sequence[$se]} $flag$'\n'
         macro+=$flag
         se=$((se+1))
         if [[ $se -lt ${#sequence} ]] && [[ -n $flag ]]
@@ -256,11 +254,10 @@ function run_test ()
      if timeout $_TIME_OUT ./$printf_exec_file > $printf_diff_file
     then
         echo >> $printf_diff_file
-        
     else
-        printf "\rTEST : %-6d \033[31m STDIO PRINTF TIME OUT\033[m\n" $test_n
-        printf "\n= = = TEST : %-6d STDIO PRINTF TIMEOUT\n" $test_n >> $LOG_FILE
-
+        printf "\rTEST : %-6d \033[31;1m STDIO PRINTF TIME OUT or EXEC ERROR\033[m\n" $test_n
+        printf "\n= = = TEST : %-6d STDIO PRINTF TIMEOUT or EXEC ERROR\n" \
+$test_n >> $LOG_FILE"_"$test_n
         exit 1
     fi
     
@@ -269,39 +266,45 @@ function run_test ()
     if timeout $_TIME_OUT ./$ft_printf_exec_file > $ft_printf_diff_file
     then
         echo >> $ft_printf_diff_file
-        
     else
-        printf "\rTEST : %-6d \033[31m TIME OUT\033[m\n" $test_n
-        printf "\n= = = TEST : %-6d TIME OUT\n" $test_n >> $LOG_FILE
+        printf "\rTEST : %-6d \033[31;1m TIME OUT\033[m\n" $test_n
+        printf "\n= = = TEST : %-6d TIME OUT\n" $test_n >> $LOG_FILE"_"$test_n
         return 1
     fi
-
-    printf "\n= = = TEST : %-6d = =\n" $test_n >> $LOG_FILE
-    echo $macro >> $LOG_FILE
-
+    printf "\n= = = TEST : %-6d = =\n" $test_n >> $LOG_FILE"_"$test_n
+    echo $macro >> $LOG_FILE"_"$test_n
     printf "TEST : %-6d" $test_n
-    
     diff -u --label FT_42 $ft_printf_diff_file\
- --label STDIO $printf_diff_file >> $LOG_FILE
-
+ --label STDIO $printf_diff_file >> $LOG_FILE"_"$test_n
     if [[ $? -eq 0 ]]
     then
-        printf "\rTEST : %-6d \033[32m + OK +\033[m\n" $test_n
-        echo OK >> $LOG_FILE
+        printf "\rTEST : %-6d \033[32;1m + OK +\033[m\n" $test_n
+        echo OK >> $LOG_FILE"_"$test_n
     else
-        printf "\rTEST : %-6d \033[31m ! KO !\033[m\n" $test_n
+        printf "\rTEST : %-6d \033[31;1m ! KO !\033[m\n" $test_n
         echo $macro
         diff --color=always -u --label FT_42 $ft_printf_diff_file\
  --label STDIO $printf_diff_file
-        return 2
+        return 1
     fi
+}
 
+function cleanup ()
+{
+    rm -f $printf_diff_file $printf_exec_file $printf_main_file \
+    $ft_printf_diff_file $ft_printf_exec_file $ft_printf_main_file
 }
 
 # ================================== Program ================================= #
 
+if [[ $# -ne 1 ]]
+then
+    echo "Usage $0 [Number of tests to run]"
+    exit 1
+fi
+
 mkdir -p $WD $LOG_DIR
-rm -f $LOG_FILE
+rm -f $LOG_FILE*
 
 write_main_files
 
@@ -310,9 +313,9 @@ do
     run_test $test_n
     if [[ $? -eq 1 ]]
     then
+        cleanup
         exit 1
     fi
 done
 
-#sleep 1
-#rm -f $header_file $printf_main_file $ft_printf_main_file
+cleanup
