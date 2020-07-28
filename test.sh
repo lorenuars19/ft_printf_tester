@@ -41,7 +41,7 @@ WD=.42_Test_42_Logs_Here        # The 'Working Directory'
 LOG_DIR=$WD/.42.LOGS_HERE       # The LOGS Directory
 LOG_FILE=$LOG_DIR/.42.LOGS      # The LOGS file
 # Here you can see how the script searches for your input files
-FT_PRINTF_HEADER_FILE=$( cd $WD && find ../ -type f -name "ft_printf.h" )
+FT_PRINTF_HEADER_FILE=$( mkdir -p $WD && cd $WD && find ../ -type f -name "ft_printf.h" )
 FT_PRINTF_LIB_FILE=$( find . -name "libftprintf.a" )
 # Down here are all the file names WITH 42's E V E R Y W H E R E
 no_dir_header_file=.42.HeAdEr.h
@@ -248,10 +248,9 @@ function write_sequence ()
 function run_test ()
 {
     write_header_file
-
-    rm -f $printf_exec_file\
-    && gcc -I../ $printf_main_file -o $printf_exec_file
-     if timeout $_TIME_OUT ./$printf_exec_file > $printf_diff_file
+    rm -f $printf_exec_file
+    gcc -I../ $printf_main_file -o $printf_exec_file
+    if timeout $_TIME_OUT ./$printf_exec_file > $printf_diff_file
     then
         echo >> $printf_diff_file
     else
@@ -260,15 +259,18 @@ function run_test ()
 $test_n >> $LOG_FILE"_"$test_n
         exit 1
     fi
-    
-    rm -f $ft_printf_exec_file\
-    && gcc -I../ $ft_printf_main_file $FT_PRINTF_LIB_FILE -o $ft_printf_exec_file
+    rm -f $ft_printf_exec_file
+    if ! gcc -I../ $ft_printf_main_file $FT_PRINTF_LIB_FILE -o $ft_printf_exec_file
+    then 
+        printf "\033[1;31mCOMPILE ERROR\033[m\n"
+        exit 1
+    fi
     if timeout $_TIME_OUT ./$ft_printf_exec_file > $ft_printf_diff_file
     then
         echo >> $ft_printf_diff_file
     else
-        printf "\rTEST : %-6d \033[31;1m TIME OUT\033[m\n" $test_n
-        printf "\n= = = TEST : %-6d TIME OUT\n" $test_n >> $LOG_FILE"_"$test_n
+        printf "\rTEST : %-6d \033[31;1m TIME OUT or EXEC ERROR\033[m\n" $test_n
+        printf "\n= = = TEST : %-6d TIME OUT or EXEC ERROR\n" $test_n >> $LOG_FILE"_"$test_n
         return 1
     fi
     printf "\n= = = TEST : %-6d = =\n" $test_n >> $LOG_FILE"_"$test_n
@@ -285,14 +287,16 @@ $test_n >> $LOG_FILE"_"$test_n
         echo $macro
         diff --color=always -u --label FT_42 $ft_printf_diff_file\
  --label STDIO $printf_diff_file
-        return 1
-    fix
+        return 2
+    fi
 }
 
 function cleanup ()
 {
+    printf "\033[33mCleaning my mess,\nBye\033[m\n"
     rm -f $printf_diff_file $printf_exec_file $printf_main_file \
     $ft_printf_diff_file $ft_printf_exec_file $ft_printf_main_file
+    exit
 }
 
 # ================================== Program ================================= #
@@ -302,6 +306,8 @@ then
     echo "Usage $0 [Number of tests to run]"
     exit 1
 fi
+
+trap cleanup SIGINT EXIT
 
 mkdir -p $WD $LOG_DIR
 rm -f $LOG_FILE*
@@ -313,9 +319,6 @@ do
     run_test $test_n
     if [[ $? -eq 1 ]]
     then
-        cleanup
         exit 1
     fi
 done
-
-cleanup
