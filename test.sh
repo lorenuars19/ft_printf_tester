@@ -407,20 +407,17 @@ function usage()
         -c | --comp     complexity
         -d | --no-ko    do not ask to display logs of KO
         -t | --tests    number of tests
-        -v | --verbose  verbose level
-                        0 = pretty
-                        1 = minimal
-                        2 = full
+        -v | --verbose  verbose level [ 0 = pretty | 1 = minimal | 2 = full ]
     "
     exit 1
 }
 # ================================== Program ================================= #
 # Arg check
 NO_DISPLAY=0
-MAX_TESTS=1
+MAX_TESTS=5
 _VERBOSE=0
 _GLOBAL_MAX_=2
-
+if [[ $# -eq 0 ]] ; then usage ; fi
 while [[ $1 != "" ]]; do
     case $1 in
     -v | --verbose )    shift ; _VERBOSE=$1;;
@@ -467,9 +464,10 @@ then
     rm -f $LOG_DISPLAY_FILE \
     && echo "cat "${KO_ARR[@]}" | less" > $LOG_DISPLAY_FILE \
     && chmod 775 $LOG_DISPLAY_FILE
+    printf "\033[36;1m\n./%s\n\033[mTo display KO Logs at anytime\n" $LOG_DISPLAY_FILE
 
-    while true && [[ ! $NO_DISPLAY ]] ; do
-        read -p "Do you want to display all the logs of the failed tests in less ?" yn
+    while true && [[ $NO_DISPLAY ]] ; do
+        read -p "Do you want to display all the logs of the failed tests in less ?[y/N]" yn
         case $yn in
             [Yy]* ) ./$LOG_DISPLAY_FILE; break;;
             [Nn]* ) exit;;
