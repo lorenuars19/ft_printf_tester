@@ -202,7 +202,7 @@ function gen_var ()
 
 function gen_sequence ()
 {
-    local max_items=$((1+$RANDOM%$MAX_SEQ_ITEMS))
+    local max_items=$MAX_SEQ_ITEMS
     items=(rnd num str chr ptr per)
     local index=$((RANDOM % $((${#items} + 1)) ))
     sequence=(${items[$index]})
@@ -398,23 +398,45 @@ function input_files()
     if [[ -z $FT_PRINTF_LIB_FILE ]] ; then echo "libftprintf.a Not Found" ; exit 1
     fi
 }
+
+function usage()
+{
+    echo "\
+    Usage :
+        $0 -[cdtv]
+        -c | --comp     complexity
+        -d | --no-ko    do not ask to display logs of KO
+        -t | --tests    number of tests
+        -v | --verbose  verbose level
+                        0 = pretty
+                        1 = minimal
+                        2 = full
+    "
+    exit 1
+}
 # ================================== Program ================================= #
 # Arg check
 NO_DISPLAY=0
 MAX_TESTS=1
-_VERBOSE=1
+_VERBOSE=0
 _GLOBAL_MAX_=2
 
 while [[ $1 != "" ]]; do
     case $1 in
     -v | --verbose )    shift ; _VERBOSE=$1;;
     -t | --tests )      shift ; MAX_TESTS=$1;;
-    -c | --complexity ) shift ; _GLOBAL_MAX_=$1;;
-    -d | --no-display ) NO_DISPLAY=1;;
+    -c | --comp ) shift ; _GLOBAL_MAX_=$1;;
+    -d | --no-ko ) NO_DISPLAY=1;;
     *) usage;;
     esac
     shift
 done
+# Max number of generated chars
+MAX_RND_CHARS=$_GLOBAL_MAX_
+# Max number of sequence items
+MAX_SEQ_ITEMS=$_GLOBAL_MAX_
+# Max number for flag params
+FLAG_NUM_MAX=$_GLOBAL_MAX_
 
 # Delete old LOGS
 rm -f $LOG_FILE*
@@ -439,14 +461,14 @@ do
 		KO_ARR+=( $LOG_FILE"_"$test_n )
     fi
 done
-if [[ KO_NUM -gt 0 ]] && [[ ! $NO_DISPLAY ]]
+if [[ KO_NUM -gt 0 ]]
 then
     print_summary
     rm -f $LOG_DISPLAY_FILE \
     && echo "cat "${KO_ARR[@]}" | less" > $LOG_DISPLAY_FILE \
     && chmod 775 $LOG_DISPLAY_FILE
 
-    while true; do
+    while true && [[ ! $NO_DISPLAY ]] ; do
         read -p "Do you want to display all the logs of the failed tests in less ?" yn
         case $yn in
             [Yy]* ) ./$LOG_DISPLAY_FILE; break;;
