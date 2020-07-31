@@ -353,6 +353,9 @@ then
     echo "Usage $0 [Number of tests to run]"
     exit 1
 fi
+
+make
+
 # Set up cleanup
 trap cleanup SIGINT EXIT SIGSEGV SIGABRT SIGBUS
 # Create Working Directory
