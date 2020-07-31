@@ -291,7 +291,7 @@ ERROR\n" $test_n >> $LOG_FILE"_"$test_n
 	then 
 		printf "TEST% 6d : " $test_n
 	fi
-    diff -s -u --label FT_42 $ft_printf_diff_file\
+    diff -a -s -u --label FT_42 $ft_printf_diff_file\
  --label STDIO $printf_diff_file >> $LOG_FILE"_"$test_n
     if [[ $? -eq 0 ]]
     then
@@ -317,7 +317,7 @@ ERROR\n" $test_n >> $LOG_FILE"_"$test_n
 			if [[ $_VERBOSE -ge 2 ]]
 			then
     			echo $macro
-        		diff --color=always -u --label FT_42 $ft_printf_diff_file\
+        		diff --color=always -u -a --label FT_42 $ft_printf_diff_file\
  --label STDIO $printf_diff_file
 			fi
 		elif [[ $_VERBOSE -eq 0 ]]; then
