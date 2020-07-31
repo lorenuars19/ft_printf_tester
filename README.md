@@ -1,6 +1,6 @@
 # 42 ft_printf tester
 Usage : 
-- `curl https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh`
+- `curl https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o test.sh`
 - `./test.sh [number of tests]`
 # Vars there are some variables you can tweak at the top of the file
 ``` bash

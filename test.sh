@@ -250,6 +250,8 @@ function write_sequence ()
     echo "#endif" >> $header_file
 }
 
+function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
+
 function run_test ()
 {
     write_header_file
