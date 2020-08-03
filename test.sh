@@ -17,7 +17,7 @@
 # Specify the verbose level : 0 = pretty , 1 = minimal, 2 = full info 
 _VERBOSE=2
 # The time out for execution of tests
-_TIME_OUT=1
+_TIME_OUT=50
 # The global max for fast tweaking of below maximums
 _GLOBAL_MAX_=20
 # 1 = add newlines add '\n' between each items in the sequence
@@ -281,12 +281,14 @@ function compile_run()
     then
         echo >> $printf_diff_file
     else
+        STD_RET=$?
         if [[ $_VERBOSE -ge 1 ]] ; then
-            printf "\nTEST : %-6d \033[31;1m STDIO PRINTF TIME OUT or EXEC ERROR\033[m\n" $test_n
+            printf "\nTEST : %-6d \033[31;1m STDIO PRINTF TIME OUT or EXEC ERROR %03d \033[m\n" $test_n $STD_RET
+            echo $STD_RET
             echo $macro
             KO_NUM=$((KO_NUM + 1))
         fi
-        printf "\n= = = TEST : %-6d STDIO PRINTF TIMEOUT or EXEC ERROR\n" $test_n >> $LOG_FILE"_"$test_n
+        printf "\n= = = TEST : %-6d STDIO PRINTF TIMEOUT or EXEC ERROR %03d\n" $test_n $STD_RET >> $LOG_FILE"_"$test_n
 		echo $macro >> $LOG_FILE"_"$test_n
         return 2
     fi
@@ -433,7 +435,7 @@ while [[ $1 != "" ]]; do
     shift
 done
 # Max number of generated chars
-MAX_RND_CHARS=$_GLOBAL_MAX_
+MAX_RND_CHARS=$(($_GLOBAL_MAX_/10))
 # Max number of sequence items
 MAX_SEQ_ITEMS=$_GLOBAL_MAX_
 # Max number for flag params
@@ -470,7 +472,7 @@ then
     && chmod 775 $LOG_DISPLAY_FILE
     printf "\033[36;1m\n./%s\n\033[mTo display KO Logs at anytime\n" $LOG_DISPLAY_FILE
 
-    while true && [[ $NO_DISPLAY ]] ; do
+    while true && [[ $NO_DISPLAY -eq 0 ]] ; do
         read -p "Do you want to display all the logs of the failed tests in less ?[y/N]" yn
         case $yn in
             [Yy]* ) ./$LOG_DISPLAY_FILE; break;;
