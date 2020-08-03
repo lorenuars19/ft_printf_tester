@@ -1,7 +1,14 @@
 # 42 ft_printf tester
 Usage : 
 - `curl https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o test.sh`
-- `./test.sh [number of tests]`
+- `./test.sh                                                                                                                                               ─╯
+    Usage :
+        ./test.sh -[cdtv]
+        -c | --comp     complexity
+        -d | --no-ko    do not ask to display logs of KO
+        -t | --tests    number of tests
+        -v | --verbose  verbose level [ 0 = pretty | 1 = minimal | 2 = full ]
+`
 # Vars there are some variables you can tweak at the top of the file
 ``` bash
 # =============================== Global variables =========================== #
