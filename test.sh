@@ -249,7 +249,7 @@ function write_sequence ()
 
 function time_out_kill()
 {
-    trap - ALRM TERM
+    trap - ALRM TERM 2>/dev/null
     kill -ALRM $sleepkill 2>/dev/null
     kill -ALRM $! 2>/dev/null && return 124
 }
@@ -257,7 +257,7 @@ function time_out_kill()
 function time_out_sleepkill()
 {
     trap "time_out_kill" ALRM
-    sleep $1& wait
+    sleep $1& wait 2>/dev/null
     kill -TERM $command 2>/dev/null
 }
 
@@ -266,7 +266,7 @@ function time_out ()
     time_out_sleepkill $1& sleepkill=$!
     shift
     trap "time_out_kill" ALRM TERM
-    "$@" & command=$! ; wait $command; RET=$?
+    "$@" & command=$! ; wait $command 2>/dev/null ; RET=$?
     kill -TERM $sleepkill 2>/dev/null
     return $RET          
 }
