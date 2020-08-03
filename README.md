@@ -3,7 +3,7 @@ Usage :
 - `curl https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o test.sh`
 ```
 Usage :
-    ./test.sh -[cdtv]
+        ./test.sh -[cdtv]
         -c | --comp     complexity
         -d | --no-ko    do not ask to display logs of KO
         -t | --tests    number of tests
