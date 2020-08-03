@@ -408,6 +408,10 @@ function usage()
         -d | --no-ko    do not ask to display logs of KO
         -t | --tests    number of tests
         -v | --verbose  verbose level [ 0 = pretty | 1 = minimal | 2 = full ]
+    Ex:
+        $0 -t 420 -c 4 -v 0 -d
+        $0 -t 5 -c 420 -v 2
+        $0 -t 69 -c 69 -v 1
     "
     exit 1
 }
