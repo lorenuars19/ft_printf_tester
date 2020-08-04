@@ -17,7 +17,7 @@
 # Specify the verbose level : 0 = pretty , 1 = minimal, 2 = full info 
 _VERBOSE=2
 # The time out for execution of tests
-_TIME_OUT=5
+_TIME_OUT=0.5
 # 1 = add newlines add '\n' between each items in the sequence
 WITH_NEWLINES=0
 # Max number of generated chars
@@ -113,9 +113,7 @@ function write_header_file()
 function rnd_chars()
 {
     local n_rand_chars=$((RANDOM%$1))
-    # local chars="!#$%&'*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ^_abcdefghijklmnopqrstuvwxyz"
-    local chars="<=>"
-
+    local chars="!#$%&'*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ^_abcdefghijklmnopqrstuvwxyz"
     for (( i=0; i<= n_rand_chars; i++))
     do
         tmp=${chars:$((RANDOM%${#chars})):1}
@@ -176,7 +174,7 @@ function gen_sequence ()
     local conv_items=( CV_NUM CV_STR CV_CHR CV_PTR )
     for (( it=0; it<$max_items ; it++ ))
     do
-        local flag_or_rnd=$(($RANDOM%3))
+        local flag_or_rnd=$(($RANDOM%2))
         if [[ $flag_or_rnd -eq 1 ]]
         then
             sequence+=( rnd )
@@ -184,8 +182,8 @@ function gen_sequence ()
             sequence+=( FLG )
             local zero_space_nothing=${zero_items[$(($RANDOM%${#zero_items[@]}))]}
             local has_precision=$(($RANDOM%2))
-            local fw_star=$(($RANDOM%3))
-            local pr_star=$(($RANDOM%3))
+            local fw_star=$(($RANDOM%2))
+            local pr_star=$(($RANDOM%2))
             local conv=${conv_items[$(($RANDOM%${#conv_items[@]}))]}
             sequence+=( $zero_space_nothing )
             if [[ $fw_star -eq 1 ]] ; then
@@ -210,18 +208,14 @@ function write_sequence ()
 {
     set -f
     local sep=", "
-    macro="# define TEST \""
+    macro="# define TEST \"|"
     gen_sequence
     for (( se=0 ; se<${#sequence[@]} ; se++ ))
     do
         gen_flag ${sequence[$se]}
         macro+="$flag"
-        if [[ $WITH_NEWLINES -eq 1 ]]
-        then
-            macro+="\\n"
-        fi
     done
-    macro+=" \n\""$sep
+    macro+=" |\n\""$sep
     se=0
     while (( $se<${#sequence[@]} ))
     do
@@ -276,20 +270,19 @@ function compile_run()
     if [[ -e $printf_main_file ]] ; then
         gcc -I. $printf_main_file -o $printf_exec_file
     fi
-    if [[ -e $printf_exec_file ]] && time_out $_TIME_OUT ./$printf_exec_file > $printf_diff_file
+    if [[ -e $printf_exec_file ]] && timeout $_TIME_OUT ./$printf_exec_file > $printf_diff_file
     then
         echo >> $printf_diff_file
     else
         STD_RET=$?
         if [[ $_VERBOSE -ge 1 ]] ; then
             printf "\nTEST : %-6d \033[31;1m STDIO PRINTF TIME OUT or EXEC ERROR %03d \033[m\n" $test_n $STD_RET
-            echo $STD_RET
             echo $macro
             KO_NUM=$((KO_NUM + 1))
         fi
         printf "\n= = = TEST : %-6d STDIO PRINTF TIMEOUT or EXEC ERROR %03d\n" $test_n $STD_RET >> $LOG_FILE"_"$test_n
 		echo $macro >> $LOG_FILE"_"$test_n
-        return 2
+        return 1
     fi
     
     rm -f $ft_printf_exec_file
@@ -298,7 +291,7 @@ function compile_run()
         printf "\033[1;31mCOMPILE ERROR\033[m\n" ; return 3
         fi
     fi
-    if [[ -e $ft_printf_exec_file ]] && time_out $_TIME_OUT ./$ft_printf_exec_file > $ft_printf_diff_file
+    if [[ -e $ft_printf_exec_file ]] && timeout $_TIME_OUT ./$ft_printf_exec_file > $ft_printf_diff_file
     then
         echo >> $ft_printf_diff_file
     else
@@ -310,7 +303,7 @@ function compile_run()
         fi
         printf "\n= = = TEST : %-6d FT_printf TIME OUT or EXEC ERROR\n" $test_n >> $LOG_FILE"_"$test_n
 		echo $macro >> $LOG_FILE"_"$test_n
-        exit 2
+        return 2
     fi
 }
 
@@ -418,11 +411,11 @@ function usage()
 }
 # ================================== Program ================================= #
 # Arg check
-BETA_TEST=1
+BETA_TEST=0
 NO_DISPLAY=0
 MAX_TESTS=5
 _VERBOSE=0
-_GLOBAL_MAX_=2
+_GLOBAL_MAX_=1
 
 if [[ $# -eq 0 ]] ; then usage ; fi
 while [[ $1 != "" ]]; do
@@ -437,26 +430,21 @@ while [[ $1 != "" ]]; do
     shift
 done
 
-
-
-
 if [[ $_GLOBAL_MAX_ -le 0 ]] ; then _GLOBAL_MAX_=1 ; fi
 # Max number of generated chars
 MAX_RND_CHARS=$(( 1 + ($_GLOBAL_MAX_/10 )))
 # Max number of sequence items
-MAX_SEQ_ITEMS=$(( $_GLOBAL_MAX_*2 ))
+MAX_SEQ_ITEMS=$(( $_GLOBAL_MAX_/2 ))
 # Max number for flag params
-FLAG_NUM_MAX=42
+FLAG_NUM_MAX=20
 if [[ $FLAG_NUM_MAX -ge 42 ]] ; then FLAG_NUM_MAX=42 ; fi
 
 
 if [[ $BETA_TEST -eq 1 ]]; then
-    set +x
+    set -x
     write_sequence
     echo $macro
-    exit
 fi
-
 
 # Delete old LOGS
 rm -f $LOG_FILE*
@@ -476,7 +464,7 @@ for (( test_n=0;test_n<$MAX_TESTS; test_n++ ))
 do
     run_test $test_n
 	status=$?
-	if [[ $status -ne 0 ]] 
+	if [[ $status -eq 2 ]] 
 	then
 		KO_ARR+=( $LOG_FILE"_"$test_n )
     fi
