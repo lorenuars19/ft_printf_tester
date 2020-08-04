@@ -18,8 +18,6 @@
 _VERBOSE=2
 # The time out for execution of tests
 _TIME_OUT=5
-# The global max for fast tweaking of below maximums
-_GLOBAL_MAX_=20
 # 1 = add newlines add '\n' between each items in the sequence
 WITH_NEWLINES=0
 # Max number of generated chars
@@ -176,7 +174,7 @@ function gen_var ()
         chr) flag=$(($RANDOM%127)); return 0;;
         str) ;;
         ptr) is_null=1;;
-        *) return 1;;
+        *) return 0;;
     esac
 
     if [[ is_null -eq 1 ]]
@@ -188,17 +186,54 @@ function gen_var ()
     flag+="\""
 }
 
+function rnd_number ()
+{
+    local negative=$(($RANDOM%2))
+    echo $1
+    R_NUM=$(($RANDOM%$1))
+    if [[ negative -eq 1 ]] && [[ -z $2 ]] ; then
+        R_NUM=$((-$R_NUM))
+    fi
+}
+
 function gen_sequence ()
 {
     local max_items=$MAX_SEQ_ITEMS
-    items=(rnd num str chr ptr per num str chr ptr per num str chr ptr per num str chr ptr per num str chr ptr per )
-    local index=$((RANDOM % $((${#items} + 1)) ))
-    sequence=(${items[$index]})
+    local zero_items=( '0' ' ' '' )
+    local conv_items=( '%' 'i' 'd' 'u' 'x' 'X' 's' 'c' 'p')
+
     for (( it=0; it<$max_items ; it++ ))
     do
-        index=$((RANDOM % $((${#items} + 1)) ))
-        sequence+=(${items[$index]})
+        local flag_or_rnd=$(($RANDOM%3))
+        if [[ $flag_or_rnd -eq 1 ]]
+        then
+            sequence+=( RND )
+        else
+            sequence+=( FLG )
+            local zero_space_nothing=${zero_items[$(($RANDOM%${#zero_items[@]}))]}
+            local conv=${conv_items[$((RANDOM%${#conv_items[@]}))]}
+
+            local has_precision=$(($RANDOM%2))
+            local fw_star=$(($RANDOM%2))
+            local pr_str=$(($RANDOM%2))
+            # rnd_number $FLAG_NUM_MAX
+            # local field_with=$R_NUM
+            # rnd_number $FLAG_NUM_MAX NO_NEG
+            # local precision=$R_NUM
+
+
+            if [[ $fw_star -eq 1 ]] ; then
+                sequence
+
+            if [[ $has_precision -eq 1 ]] ; then
+
+            fi
+
+        fi
+
     done
+
+    echo ${sequence[*]}
 }
 
 function write_sequence ()
@@ -411,21 +446,28 @@ function usage()
 }
 # ================================== Program ================================= #
 # Arg check
+BETA_TEST=1
 NO_DISPLAY=0
 MAX_TESTS=5
 _VERBOSE=0
 _GLOBAL_MAX_=2
+
 if [[ $# -eq 0 ]] ; then usage ; fi
 while [[ $1 != "" ]]; do
     case $1 in
     -v | --verbose )    shift ; _VERBOSE=$1;;
     -t | --tests )      shift ; MAX_TESTS=$1;;
-    -c | --comp ) shift ; _GLOBAL_MAX_=$1;;
-    -d | --no-ko ) NO_DISPLAY=1;;
+    -c | --comp )       shift ; _GLOBAL_MAX_=$1;;
+    -d | --no-ko )      NO_DISPLAY=1;;
+    -T )                BETA_TEST=1;;
     *) usage;;
     esac
     shift
 done
+
+
+
+
 if [[ $_GLOBAL_MAX_ -le 0 ]] ; then _GLOBAL_MAX_=1 ; fi
 # Max number of generated chars
 MAX_RND_CHARS=$(( 3 + ($_GLOBAL_MAX_/100 )))
@@ -434,6 +476,17 @@ MAX_SEQ_ITEMS=$(( $_GLOBAL_MAX_*2 ))
 # Max number for flag params
 FLAG_NUM_MAX=$_GLOBAL_MAX_
 if [[ $FLAG_NUM_MAX -ge 42 ]] ; then FLAG_NUM_MAX=42 ; fi
+
+
+if [[ $BETA_TEST -eq 1 ]]; then
+
+    set -x
+    gen_sequence
+
+    exit
+fi
+
+
 # Delete old LOGS
 rm -f $LOG_FILE*
 # Create Working Directory
