@@ -113,7 +113,8 @@ function write_header_file()
 function rnd_chars()
 {
     local n_rand_chars=$((RANDOM%$1))
-    local chars="!#$%&'*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ^_abcdefghijklmnopqrstuvwxyz"
+    # local chars="!#$%&'*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ^_abcdefghijklmnopqrstuvwxyz"
+    local chars="<=>"
 
     for (( i=0; i<= n_rand_chars; i++))
     do
@@ -124,44 +125,24 @@ function rnd_chars()
 
 function gen_flag ()
 {
-    flag=''
-    local conv=''
-    local is_percent=0
+    flag=""
     case $1 in
-        rnd) rnd_chars $MAX_RND_CHARS; return 0;;
-        num) conv=${NUM_CONV:$(($RANDOM%${#NUM_CONV})):1};;
-        str) conv=$STR_CONV;;
-        chr) conv=$CHR_CONV;;
-        ptr) conv=$PTR_CONV;;
-        per) is_percent=1;;
+        FLG) flag="%" ; return 0 ;;
+        NO) flag=""; return 0 ;;
+        SP) flag=" " ; return 0 ;;
+        ZR) flag="0" ; return 0 ;;
+        ST*) set -f ; flag="*" ; return 0 ;;
+        DT) flag="." ; return 0 ;;
+        FW) rnd_number $FLAG_NUM_MAX ; flag=$R_NUM ; return 0 ;;
+        PR) rnd_number $FLAG_NUM_MAX 0 ; flag=$R_NUM ; return 0 ;;
+        CV_CHR) flag='c' ; return 0 ;;
+        CV_STR) flag='s' ; return 0 ;;
+        CV_PTR) flag='p' ; return 0 ;;
+        CV_NUM) flag=${NUM_CONV:$(($RANDOM%${#NUM_CONV})):1} ; return 0 ;;
+
+        rnd) flag="" ; rnd_chars $MAX_RND_CHARS ; return 0 ;;
         *) return 1;;
     esac
-
-    local tmp_flag='%'
-    if [[ $is_percent -eq 1 ]]
-    then
-        tmp_flag+='%'
-        flag=$tmp_flag
-        return 0
-    fi
-
-    local has_prs=$(($RANDOM%2))
-    local zero_space_nothing=$(($RANDOM%3))
-    
-    if [[ $zero_space_nothing -eq 1 ]] ; then
-        tmp_flag+=' '
-    elif [[ $zero_space_nothing -eq 0 ]] ; then
-        tmp_flag+='0'
-    fi
-
-    tmp_flag+=$(($RANDOM%$FLAG_NUM_MAX))
-    if [[ $has_prs -eq 1 ]]
-    then
-        tmp_flag+='.'
-        tmp_flag+=$(($RANDOM%$FLAG_NUM_MAX))
-    fi
-    tmp_flag+=$conv
-    flag=$tmp_flag
 }
 
 function gen_var ()
@@ -169,27 +150,19 @@ function gen_var ()
     flag=''
     local is_null=$(($RANDOM%10))
     case $1 in
-        rnd) return 0;;
-        num) flag=$(($RANDOM%$VARS_NUM_MAX)); return 0;;
-        chr) flag=$(($RANDOM%127)); return 0;;
-        str) ;;
-        ptr) is_null=1;;
+        ST_FW) rnd_number $FLAG_NUM_MAX ; flag=$R_NUM ; return 0 ;;
+        ST_PR) rnd_number $FLAG_NUM_MAX 0 ; flag=$R_NUM ; return 0 ;;
+        CV_CHR) rnd_number 127 0 ; flag=$R_NUM ; return 0 ;;
+        CV_STR) flag+=\" ; rnd_chars $MAX_RND_CHARS ; flag+=\" ; return 0 ;;
+        CV_PTR) flag="NULL" ; return 0 ;;
+        CV_NUM) rnd_number $FLAG_NUM_MAX ; flag=$R_NUM; return 0 ;;
         *) return 0;;
     esac
-
-    if [[ is_null -eq 1 ]]
-    then
-        flag='NULL'; return 0;
-    fi
-    flag="\""
-    rnd_chars $STR_LEN_MAX
-    flag+="\""
 }
 
 function rnd_number ()
 {
     local negative=$(($RANDOM%2))
-    echo $1
     R_NUM=$(($RANDOM%$1))
     if [[ negative -eq 1 ]] && [[ -z $2 ]] ; then
         R_NUM=$((-$R_NUM))
@@ -199,67 +172,65 @@ function rnd_number ()
 function gen_sequence ()
 {
     local max_items=$MAX_SEQ_ITEMS
-    local zero_items=( '0' ' ' '' )
-    local conv_items=( '%' 'i' 'd' 'u' 'x' 'X' 's' 'c' 'p')
-
+    local zero_items=( ZR SP NO )
+    local conv_items=( CV_NUM CV_STR CV_CHR CV_PTR )
     for (( it=0; it<$max_items ; it++ ))
     do
         local flag_or_rnd=$(($RANDOM%3))
         if [[ $flag_or_rnd -eq 1 ]]
         then
-            sequence+=( RND )
+            sequence+=( rnd )
         else
             sequence+=( FLG )
             local zero_space_nothing=${zero_items[$(($RANDOM%${#zero_items[@]}))]}
-            local conv=${conv_items[$((RANDOM%${#conv_items[@]}))]}
-
             local has_precision=$(($RANDOM%2))
-            local fw_star=$(($RANDOM%2))
-            local pr_str=$(($RANDOM%2))
-            # rnd_number $FLAG_NUM_MAX
-            # local field_with=$R_NUM
-            # rnd_number $FLAG_NUM_MAX NO_NEG
-            # local precision=$R_NUM
-
-
+            local fw_star=$(($RANDOM%3))
+            local pr_star=$(($RANDOM%3))
+            local conv=${conv_items[$(($RANDOM%${#conv_items[@]}))]}
+            sequence+=( $zero_space_nothing )
             if [[ $fw_star -eq 1 ]] ; then
-                sequence
-
-            if [[ $has_precision -eq 1 ]] ; then
-
+                sequence+=( ST_FW )
+            else
+                sequence+=( FW )
             fi
-
+            if [[ $has_precision -eq 1 ]] ; then
+                sequence+=( DT )
+                if [[ $pr_star -eq 1 ]] ; then
+                    sequence+=( ST_PR )
+                else
+                    sequence+=( PR )
+                fi
+            fi
+            sequence+=( $conv )
         fi
-
     done
-
-    echo ${sequence[*]}
 }
 
 function write_sequence ()
 {
+    set -f
     local sep=", "
     macro="# define TEST \""
     gen_sequence
-    for (( se=0 ; se<${#sequence} ; se++ ))
+    for (( se=0 ; se<${#sequence[@]} ; se++ ))
     do
         gen_flag ${sequence[$se]}
-        macro+=$flag
-        if [[ WITH_NEWLINES -eq 1 ]]
+        macro+="$flag"
+        if [[ $WITH_NEWLINES -eq 1 ]]
         then
             macro+="\\n"
         fi
     done
-    macro+="\""$sep
+    macro+=" \n\""$sep
     se=0
-    while (( $se<${#sequence} ))
+    while (( $se<${#sequence[@]} ))
     do
         gen_var ${sequence[$se]}
-        macro+=$flag
+        macro+="$flag"
         se=$((se+1))
-        if [[ $se -lt ${#sequence} ]] && [[ -n $flag ]]
+        if [[ $se -lt ${#sequence[@]} ]] && [[ -n $flag ]]
         then
-            macro+=$sep
+            macro+="$sep"
         fi
     done
     if [[ ${macro:$((${#macro} - ${#sep})):${#sep}} == $sep ]]
@@ -268,6 +239,7 @@ function write_sequence ()
     fi
     echo $macro >> $header_file
     echo "#endif" >> $header_file
+    set +f
 }
 
 # **************************************************************************** #
@@ -470,19 +442,18 @@ done
 
 if [[ $_GLOBAL_MAX_ -le 0 ]] ; then _GLOBAL_MAX_=1 ; fi
 # Max number of generated chars
-MAX_RND_CHARS=$(( 3 + ($_GLOBAL_MAX_/100 )))
+MAX_RND_CHARS=$(( 1 + ($_GLOBAL_MAX_/10 )))
 # Max number of sequence items
 MAX_SEQ_ITEMS=$(( $_GLOBAL_MAX_*2 ))
 # Max number for flag params
-FLAG_NUM_MAX=$_GLOBAL_MAX_
+FLAG_NUM_MAX=42
 if [[ $FLAG_NUM_MAX -ge 42 ]] ; then FLAG_NUM_MAX=42 ; fi
 
 
 if [[ $BETA_TEST -eq 1 ]]; then
-
-    set -x
-    gen_sequence
-
+    set +x
+    write_sequence
+    echo $macro
     exit
 fi
 
