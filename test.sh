@@ -17,7 +17,7 @@
 # Specify the verbose level : 0 = pretty , 1 = minimal, 2 = full info 
 _VERBOSE=2
 # The time out for execution of tests
-_TIME_OUT=50
+_TIME_OUT=5
 # The global max for fast tweaking of below maximums
 _GLOBAL_MAX_=20
 # 1 = add newlines add '\n' between each items in the sequence
@@ -108,20 +108,8 @@ function write_header_file()
 # include \"$FT_PRINTF_HEADER_FILE\"
 # include <stdio.h>
 " >> $header_file
-    # This is where all the magic happens (jump to line 215)
+    # This is where all the magic happens
     write_sequence
-}
-
-function str_contains ()
-{
-    for (( j=0 ; j<${#1}; j++))
-    do
-        if [[ ${1:$j:1} == $2 ]]
-        then
-            return 1
-        fi
-    done
-    return 0
 }
 
 function rnd_chars()
@@ -203,7 +191,7 @@ function gen_var ()
 function gen_sequence ()
 {
     local max_items=$MAX_SEQ_ITEMS
-    items=(rnd num str chr ptr per)
+    items=(rnd num str chr ptr per num str chr ptr per num str chr ptr per num str chr ptr per num str chr ptr per )
     local index=$((RANDOM % $((${#items} + 1)) ))
     sequence=(${items[$index]})
     for (( it=0; it<$max_items ; it++ ))
@@ -246,6 +234,10 @@ function write_sequence ()
     echo $macro >> $header_file
     echo "#endif" >> $header_file
 }
+
+# **************************************************************************** #
+#                               RUNNING TESTS                                  #
+# **************************************************************************** #
 
 function time_out_kill()
 {
@@ -434,13 +426,14 @@ while [[ $1 != "" ]]; do
     esac
     shift
 done
+if [[ $_GLOBAL_MAX_ -le 0 ]] ; then _GLOBAL_MAX_=1 ; fi
 # Max number of generated chars
-MAX_RND_CHARS=$(($_GLOBAL_MAX_/10))
+MAX_RND_CHARS=$(( 3 + ($_GLOBAL_MAX_/100 )))
 # Max number of sequence items
-MAX_SEQ_ITEMS=$_GLOBAL_MAX_
+MAX_SEQ_ITEMS=$(( $_GLOBAL_MAX_*2 ))
 # Max number for flag params
 FLAG_NUM_MAX=$_GLOBAL_MAX_
-
+if [[ $FLAG_NUM_MAX -ge 42 ]] ; then FLAG_NUM_MAX=42 ; fi
 # Delete old LOGS
 rm -f $LOG_FILE*
 # Create Working Directory
