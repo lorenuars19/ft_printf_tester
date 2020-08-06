@@ -270,7 +270,7 @@ function compile_run()
     if [[ -e $printf_main_file ]] ; then
         gcc -I. $printf_main_file -o $printf_exec_file
     fi
-    if [[ -e $printf_exec_file ]] && timeout $_TIME_OUT ./$printf_exec_file > $printf_diff_file
+    if [[ -e $printf_exec_file ]] && ./$printf_exec_file > $printf_diff_file
     then
         echo >> $printf_diff_file
     else
@@ -291,7 +291,7 @@ function compile_run()
         printf "\033[1;31mCOMPILE ERROR\033[m\n" ; return 3
         fi
     fi
-    if [[ -e $ft_printf_exec_file ]] && timeout $_TIME_OUT ./$ft_printf_exec_file > $ft_printf_diff_file
+    if [[ -e $ft_printf_exec_file ]] && ./$ft_printf_exec_file > $ft_printf_diff_file
     then
         echo >> $ft_printf_diff_file
     else
