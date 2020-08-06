@@ -1,6 +1,6 @@
 # 42 ft_printf tester
 Usage : 
-- `curl https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o test.sh`
+- `curl https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o test.sh && chmod 755 test.sh`
 ```
    Usage :
         ./test.sh -[cdtv]
