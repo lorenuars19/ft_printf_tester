@@ -348,7 +348,11 @@ function run_test ()
 			then
     			echo $macro
                 if [[ -e $ft_printf_diff_file ]] && [[ -e $printf_diff_file ]]; then
-        		    diff --color=always -a -u --label FT_42 $ft_printf_diff_file --label STDIO $printf_diff_file
+                    if [[ $(uname) == "Linux" ]] ; then
+        		        diff --color=always -a -u --label FT_42 $ft_printf_diff_file --label STDIO $printf_diff_file
+                    else
+        		        diff -a -u --label FT_42 $ft_printf_diff_file --label STDIO $printf_diff_file
+                    fi
                 fi
 			fi
 		elif [[ $_VERBOSE -eq 0 ]]; then printf "\033[31;1m!%-6d\033[m" $test_n
