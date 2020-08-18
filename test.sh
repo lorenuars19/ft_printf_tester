@@ -14,6 +14,7 @@
 
 # =============================== Global variables =========================== #
 # = = = = = = = = = = = = = = = YOU CAN TWEAK THESES = = = = = = = = = = = = = #
+CCFLAGS="-Wall -Wextra -Werror"
 # Specify the verbose level : 0 = pretty , 1 = minimal, 2 = full info 
 _VERBOSE=2
 # The time out for execution of tests
@@ -48,8 +49,8 @@ printf_main_file=$WD/42.PrInTf.c
 ft_printf_main_file=$WD/42.Ft_PrInTf.c
 printf_diff_file=$WD/42.pRiNtF.DiFf
 ft_printf_diff_file=$WD/42.Ft_PrInTf.DiFf
-printf_exec_file=$WD/42.printf.exe
-ft_printf_exec_file=$WD/42.ft_printf.exe
+printf_exec_file=$WD/42.printf.test
+ft_printf_exec_file=$WD/42.ft_printf.test
 
 # ================================= Functions =================================#
 function write_main_files() 
@@ -169,6 +170,7 @@ function rnd_number ()
 
 function gen_sequence ()
 {
+    sequence=( )
     local max_items=$MAX_SEQ_ITEMS
     local zero_items=( ZR SP NO )
     local conv_items=( CV_NUM CV_STR CV_CHR CV_PTR )
@@ -180,12 +182,15 @@ function gen_sequence ()
             sequence+=( rnd )
         else
             sequence+=( FLG )
-            local zero_space_nothing=${zero_items[$(($RANDOM%${#zero_items[@]}))]}
             local has_precision=$(($RANDOM%2))
             local fw_star=$(($RANDOM%2))
             local pr_star=$(($RANDOM%2))
             local conv=${conv_items[$(($RANDOM%${#conv_items[@]}))]}
-            sequence+=( $zero_space_nothing )
+            local zero_space_nothing=${zero_items[$(($RANDOM%${#zero_items[@]}))]}
+
+            if [[$conv != "CV_STR" ]]; then
+                sequence+=( $zero_space_nothing )
+            fi
             if [[ $fw_star -eq 1 ]] ; then
                 sequence+=( ST_FW )
             else
@@ -268,16 +273,25 @@ function compile_run()
 {
     rm -f $printf_exec_file
     if [[ -e $printf_main_file ]] ; then
-        gcc -I. $printf_main_file -o $printf_exec_file
+        if ! gcc $CCFLAGS -I. $printf_main_file -o $printf_exec_file ; then 
+            if [[ $_VERBOSE -gt 1 ]]
+            then
+                printf "\nTEST : %-6d \033[31;1m STDIO PRINTF COMPILATION ERROR (tester made invalid pattern)\033[m\n" $test_n
+            fi
+            macro=''
+            sequence=()
+            run_test $test_n
+            sleep 2
+            return 1
+        fi
     fi
-    if [[ -e $printf_exec_file ]] && ./$printf_exec_file > $printf_diff_file
+    if [[ -e $printf_exec_file ]] && time_out $_TIME_OUT ./$printf_exec_file > $printf_diff_file
     then
         echo >> $printf_diff_file
     else
         STD_RET=$?
         if [[ $_VERBOSE -ge 1 ]] ; then
-            printf "\nTEST : %-6d \033[31;1m STDIO PRINTF TIME OUT or EXEC ERROR %03d \033[m\n" $test_n $STD_RET
-            echo $macro
+           
             KO_NUM=$((KO_NUM + 1))
         fi
         printf "\n= = = TEST : %-6d STDIO PRINTF TIMEOUT or EXEC ERROR %03d\n" $test_n $STD_RET >> $LOG_FILE"_"$test_n
@@ -287,11 +301,11 @@ function compile_run()
     
     rm -f $ft_printf_exec_file
     if [[ -e $ft_printf_main_file ]] ; then
-       if ! gcc -I../ $ft_printf_main_file $FT_PRINTF_LIB_FILE -o $ft_printf_exec_file ; then 
+       if ! gcc $CCFLAGS -I../ $ft_printf_main_file $FT_PRINTF_LIB_FILE -o $ft_printf_exec_file ; then 
         printf "\033[1;31mCOMPILE ERROR\033[m\n" ; return 3
         fi
     fi
-    if [[ -e $ft_printf_exec_file ]] && ./$ft_printf_exec_file > $ft_printf_diff_file
+    if [[ -e $ft_printf_exec_file ]] && time_out $_TIME_OUT ./$ft_printf_exec_file > $ft_printf_diff_file
     then
         echo >> $ft_printf_diff_file
     else
@@ -419,7 +433,7 @@ BETA_TEST=0
 NO_DISPLAY=0
 MAX_TESTS=5
 _VERBOSE=0
-_GLOBAL_MAX_=1
+_GLOBAL_MAX_=4
 
 if [[ $# -eq 0 ]] ; then usage ; fi
 while [[ $1 != "" ]]; do
@@ -446,8 +460,9 @@ if [[ $FLAG_NUM_MAX -ge 42 ]] ; then FLAG_NUM_MAX=42 ; fi
 
 if [[ $BETA_TEST -eq 1 ]]; then
     set -x
-    write_sequence
+    write_header_file
     echo $macro
+    exit
 fi
 
 # Delete old LOGS
