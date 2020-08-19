@@ -126,20 +126,20 @@ function gen_flag ()
 {
     flag=""
     case $1 in
-        FLG) flag="%" ; return 0 ;;
-        NO) flag=""; return 0 ;;
-        SP) flag=" " ; return 0 ;;
-        ZR) flag="0" ; return 0 ;;
-        ST*) set -f ; flag="*" ; return 0 ;;
-        DT) flag="." ; return 0 ;;
-        FW) rnd_number $FLAG_NUM_MAX ; flag=$R_NUM ; return 0 ;;
-        PR) rnd_number $FLAG_NUM_MAX 0 ; flag=$R_NUM ; return 0 ;;
-        CV_CHR) flag='c' ; return 0 ;;
-        CV_STR) flag='s' ; return 0 ;;
-        CV_PTR) flag='p' ; return 0 ;;
-        CV_NUM) flag=${NUM_CONV:$(($RANDOM%${#NUM_CONV})):1} ; return 0 ;;
+        FLG) flag="%"; return 0;;
+        NO) flag=""; return 0;;
+        SP) flag=" "; return 0;;
+        ZR) flag="0"; return 0;;
+        ST*) set -f; flag="*"; return 0;;
+        DT) flag="."; return 0;;
+        FW) rnd_number $FLAG_NUM_MAX; flag=$R_NUM; return 0;;
+        PR) rnd_number $FLAG_NUM_MAX 0; flag=$R_NUM; return 0;;
+        CV_CHR) flag='c'; return 0;;
+        CV_STR) flag='s'; return 0;;
+        CV_PTR) flag='p'; return 0;;
+        CV_NUM) flag=${NUM_CONV:$(($RANDOM%${#NUM_CONV})):1}; return 0;;
 
-        rnd) flag="" ; rnd_chars $MAX_RND_CHARS ; return 0 ;;
+        rnd) flag=""; rnd_chars $MAX_RND_CHARS; return 0;;
         *) return 1;;
     esac
 }
@@ -149,12 +149,12 @@ function gen_var ()
     flag=''
     local is_null=$(($RANDOM%10))
     case $1 in
-        ST_FW) rnd_number $FLAG_NUM_MAX ; flag=$R_NUM ; return 0 ;;
-        ST_PR) rnd_number $FLAG_NUM_MAX 0 ; flag=$R_NUM ; return 0 ;;
-        CV_CHR) rnd_number 127 0 ; flag=$R_NUM ; return 0 ;;
-        CV_STR) flag+=\" ; rnd_chars $MAX_RND_CHARS ; flag+=\" ; return 0 ;;
-        CV_PTR) flag="NULL" ; return 0 ;;
-        CV_NUM) rnd_number $FLAG_NUM_MAX ; flag=$R_NUM; return 0 ;;
+        ST_FW) rnd_number $FLAG_NUM_MAX; flag=$R_NUM; return 0;;
+        ST_PR) rnd_number $FLAG_NUM_MAX 0; flag=$R_NUM; return 0;;
+        CV_CHR) rnd_number 127 0; flag=$R_NUM; return 0;;
+        CV_STR) flag+=\"; rnd_chars $MAX_RND_CHARS; flag+=\"; return 0;;
+        CV_PTR) flag="NULL"; return 0;;
+        CV_NUM) rnd_number $FLAG_NUM_MAX; flag=$R_NUM; return 0;;
         *) return 0;;
     esac
 }
@@ -163,7 +163,7 @@ function rnd_number ()
 {
     local negative=$(($RANDOM%2))
     R_NUM=$(($RANDOM%$1))
-    if [[ negative -eq 1 ]] && [[ -z $2 ]] ; then
+    if [[ negative -eq 1 ]] && [[ -z $2 ]]; then
         R_NUM=$((-$R_NUM))
     fi
 }
@@ -174,7 +174,7 @@ function gen_sequence ()
     local max_items=$MAX_SEQ_ITEMS
     local zero_items=( ZR SP NO )
     local conv_items=( CV_NUM CV_STR CV_CHR CV_PTR )
-    for (( it=0; it<$max_items ; it++ ))
+    for (( it=0; it<$max_items; it++ ))
     do
         local flag_or_rnd=$(($RANDOM%2))
         if [[ $flag_or_rnd -eq 1 ]]
@@ -186,19 +186,28 @@ function gen_sequence ()
             local fw_star=$(($RANDOM%2))
             local pr_star=$(($RANDOM%2))
             local conv=${conv_items[$(($RANDOM%${#conv_items[@]}))]}
-            local zero_space_nothing=${zero_items[$(($RANDOM%${#zero_items[@]}))]}
 
-            if [[$conv != "CV_STR" ]]; then
-                sequence+=( $zero_space_nothing )
+            if [[ $has_precision -eq 1 ]]; then
+                zero_items=( SP NO )
             fi
-            if [[ $fw_star -eq 1 ]] ; then
+            if [[ $conv = "CV_STR" ]] || [[ $conv = "CV_CHR" ]] || [[ $conv = "CV_PTR" ]]; then
+                zero_items=( NO )
+            fi
+            if [[ $conv = "CV_PTR" ]] || [[ $conv = "CV_CHR" ]]; then
+                has_precision=0
+            fi
+
+            local zero_space_nothing=${zero_items[$(($RANDOM%${#zero_items[@]}))]}
+            sequence+=( $zero_space_nothing )
+            
+            if [[ $fw_star -eq 1 ]]; then
                 sequence+=( ST_FW )
             else
                 sequence+=( FW )
             fi
-            if [[ $has_precision -eq 1 ]] ; then
+            if [[ $has_precision -eq 1 ]]; then
                 sequence+=( DT )
-                if [[ $pr_star -eq 1 ]] ; then
+                if [[ $pr_star -eq 1 ]]; then
                     sequence+=( ST_PR )
                 else
                     sequence+=( PR )
@@ -215,7 +224,7 @@ function write_sequence ()
     local sep=", "
     macro="# define TEST \"|"
     gen_sequence
-    for (( se=0 ; se<${#sequence[@]} ; se++ ))
+    for (( se=0; se<${#sequence[@]}; se++ ))
     do
         gen_flag ${sequence[$se]}
         macro+="$flag"
@@ -245,38 +254,42 @@ function write_sequence ()
 #                               RUNNING TESTS                                  #
 # **************************************************************************** #
 
-function time_out_kill()
+time_out_clean_up()
 {
-    trap - ALRM TERM 2>/dev/null
-    kill -ALRM $sleepkill 2>/dev/null
-    kill -ALRM $! 2>/dev/null && return 124
+    trap - ALRM
+    kill -ALRM ${a[@]} 2>/dev/null
+    kill $! 2>/dev/null &&
+      return 124
 }
 
-function time_out_sleepkill()
+time_out_watcher()
 {
-    trap "time_out_kill" ALRM
-    sleep $1& wait 2>/dev/null
-    kill -TERM $command 2>/dev/null
+    trap "time_out_clean_up" ALRM
+    sleep $1& wait
+    kill -ALRM $$
 }
 
-function time_out ()
-{   
-    time_out_sleepkill $1& sleepkill=$!
+time_out ()
+{
+    time_out_watcher $1& a+=( $! )
     shift
-    trap "time_out_kill" ALRM TERM
-    "$@" & command=$! ; wait $command 2>/dev/null ; RET=$?
-    kill -TERM $sleepkill 2>/dev/null
-    return $RET          
+    trap "time_out_clean_up" ALRM INT
+    "$@"& wait $!; RET=$?
+    kill -ALRM $a 2>/dev/null 
+    wait $a
+    return $RET
 }
 
 function compile_run()
 {
     rm -f $printf_exec_file
-    if [[ -e $printf_main_file ]] ; then
-        if ! gcc $CCFLAGS -I. $printf_main_file -o $printf_exec_file ; then 
-            if [[ $_VERBOSE -gt 1 ]]
+    if [[ -e $printf_main_file ]]; then
+        if ! gcc $CCFLAGS -I. $printf_main_file -o $printf_exec_file 2>/dev/null; then 
+            if [[ $_VERBOSE -ge 3 ]]
             then
                 printf "\nTEST : %-6d \033[31;1m STDIO PRINTF COMPILATION ERROR (tester made invalid pattern)\033[m\n" $test_n
+                echo $macro
+                gcc $CCFLAGS -I. $printf_main_file -o $printf_exec_file
             fi
             macro=''
             sequence=()
@@ -285,13 +298,12 @@ function compile_run()
             return 1
         fi
     fi
-    if [[ -e $printf_exec_file ]] && time_out $_TIME_OUT ./$printf_exec_file > $printf_diff_file
+    if [[ -e $printf_exec_file ]] && ./$printf_exec_file > $printf_diff_file
     then
         echo >> $printf_diff_file
     else
         STD_RET=$?
-        if [[ $_VERBOSE -ge 1 ]] ; then
-           
+        if [[ $_VERBOSE -ge 1 ]]; then
             KO_NUM=$((KO_NUM + 1))
         fi
         printf "\n= = = TEST : %-6d STDIO PRINTF TIMEOUT or EXEC ERROR %03d\n" $test_n $STD_RET >> $LOG_FILE"_"$test_n
@@ -300,12 +312,12 @@ function compile_run()
     fi
     
     rm -f $ft_printf_exec_file
-    if [[ -e $ft_printf_main_file ]] ; then
-       if ! gcc $CCFLAGS -I../ $ft_printf_main_file $FT_PRINTF_LIB_FILE -o $ft_printf_exec_file ; then 
-        printf "\033[1;31mCOMPILE ERROR\033[m\n" ; return 3
+    if [[ -e $ft_printf_main_file ]]; then
+       if ! gcc $CCFLAGS -I../ $ft_printf_main_file $FT_PRINTF_LIB_FILE -o $ft_printf_exec_file; then 
+        printf "\033[1;31mCOMPILE ERROR\033[m\n"; return 3
         fi
     fi
-    if [[ -e $ft_printf_exec_file ]] && time_out $_TIME_OUT ./$ft_printf_exec_file > $ft_printf_diff_file
+    if [[ -e $ft_printf_exec_file ]] && ./$ft_printf_exec_file > $ft_printf_diff_file
     then
         echo >> $ft_printf_diff_file
     else
@@ -325,7 +337,7 @@ function run_test ()
 {
     write_header_file
     
-    if ! compile_run ; then return 1
+    if ! compile_run; then return 1
     fi   
 
     printf "\n= = = TEST : %-6d = =\n" $test_n >> $LOG_FILE"_"$test_n
@@ -362,7 +374,7 @@ function run_test ()
 			then
     			echo $macro
                 if [[ -e $ft_printf_diff_file ]] && [[ -e $printf_diff_file ]]; then
-                    if [[ $(uname) == "Linux" ]] ; then
+                    if [[ $(uname) == "Linux" ]]; then
         		        diff --color=always -a -u --label FT_42 $ft_printf_diff_file --label STDIO $printf_diff_file
                     else
         		        diff -a -u --label FT_42 $ft_printf_diff_file --label STDIO $printf_diff_file
@@ -378,15 +390,12 @@ function run_test ()
 
 function print_summary ()
 {
-    if [[ $test_n -le 0 ]] ; then test_n=$(($test_n + 1))
+    if [[ $test_n -le 0 ]]; then 
+        test_n=$(($test_n + 1))
     fi
-
 	local percent_ko=$(perl -e 'print '${KO_NUM}'.0 / '${test_n}'.0 * 100' )
-
 	printf "\nSummary : \033[32;1m%6d OK \033[31;1m%6d KO \033[37;1m%6d TOTAL\033[m\t" $OK_NUM $KO_NUM $test_n
-
-	if [[ ${percent_ko//.*} -lt 40 ]] && [[ ${percent_ko//*} != '0' ]]
-	then 
+	if [[ ${percent_ko//.*} -lt 40 ]] && [[ ${percent_ko//*} != '0' ]]; then 
 		printf "\033[32;1mPercent KO : %f%%\033[m\n" $percent_ko
 	else
 		printf "\033[31;1mPercent KO : %f%%\033[m\n" $percent_ko
@@ -404,11 +413,9 @@ function input_files()
 {
     if [[ -e Makefile ]] || [[ -e makefile ]]; then make; fi
     FT_PRINTF_HEADER_FILE=$( cd $WD && find ../ -type f -name "ft_printf.h" )
-    if [[ -z $FT_PRINTF_HEADER_FILE ]] ; then echo "ft_printf.h Not Found" ; exit 1
-    fi
+    if [[ -z $FT_PRINTF_HEADER_FILE ]]; then echo "ft_printf.h Not Found"; exit 1; fi
     FT_PRINTF_LIB_FILE=$( find . -name "libftprintf.a" )
-    if [[ -z $FT_PRINTF_LIB_FILE ]] ; then echo "libftprintf.a Not Found" ; exit 1
-    fi
+    if [[ -z $FT_PRINTF_LIB_FILE ]]; then echo "libftprintf.a Not Found"; exit 1; fi
 }
 
 function usage()
@@ -435,12 +442,12 @@ MAX_TESTS=5
 _VERBOSE=0
 _GLOBAL_MAX_=4
 
-if [[ $# -eq 0 ]] ; then usage ; fi
+if [[ $# -eq 0 ]]; then usage; fi
 while [[ $1 != "" ]]; do
     case $1 in
-    -v | --verbose )    shift ; _VERBOSE=$1;;
-    -t | --tests )      shift ; MAX_TESTS=$1;;
-    -c | --comp )       shift ; _GLOBAL_MAX_=$1;;
+    -v | --verbose )    shift; _VERBOSE=$1;;
+    -t | --tests )      shift; MAX_TESTS=$1;;
+    -c | --comp )       shift; _GLOBAL_MAX_=$1;;
     -d | --no-ko )      NO_DISPLAY=1;;
     -T )                BETA_TEST=1;;
     *) usage;;
@@ -448,14 +455,14 @@ while [[ $1 != "" ]]; do
     shift
 done
 
-if [[ $_GLOBAL_MAX_ -le 0 ]] ; then _GLOBAL_MAX_=1 ; fi
+if [[ $_GLOBAL_MAX_ -le 0 ]]; then _GLOBAL_MAX_=1; fi
 # Max number of generated chars
 MAX_RND_CHARS=$(( 1 + ($_GLOBAL_MAX_/10 )))
 # Max number of sequence items
 MAX_SEQ_ITEMS=$(( $_GLOBAL_MAX_/2 ))
 # Max number for flag params
 FLAG_NUM_MAX=20
-if [[ $FLAG_NUM_MAX -ge 42 ]] ; then FLAG_NUM_MAX=42 ; fi
+if [[ $FLAG_NUM_MAX -ge 42 ]]; then FLAG_NUM_MAX=42; fi
 
 
 if [[ $BETA_TEST -eq 1 ]]; then
@@ -496,7 +503,7 @@ then
     && chmod 775 $LOG_DISPLAY_FILE
     printf "\033[36;1m\n./%s\n\033[mTo display KO Logs at anytime\n" $LOG_DISPLAY_FILE
 
-    while true && [[ $NO_DISPLAY -eq 0 ]] ; do
+    while true && [[ $NO_DISPLAY -eq 0 ]]; do
         read -p "Do you want to display all the logs of the failed tests in less ?[y/N]" yn
         case $yn in
             [Yy]* ) ./$LOG_DISPLAY_FILE; break;;
