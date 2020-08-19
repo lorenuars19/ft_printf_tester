@@ -299,8 +299,8 @@ time_out_clean_up()
 time_out_watcher()
 {
     trap "time_out_clean_up" ALRM
-    sleep $1& wait
-    kill -ALRM $$
+    sleep $1& wait 2>/dev/null
+    kill -ALRM $$ 2>/dev/null
 }
 
 time_out ()
