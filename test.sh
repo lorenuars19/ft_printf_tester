@@ -443,6 +443,7 @@ function input_files()
 
 function usage()
 {
+    cleanup
     echo "\
     Usage :
         $0 -[cdtv]
