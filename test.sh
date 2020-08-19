@@ -72,7 +72,6 @@ function check_up_to_date ()
     elif [[ $diff_ret -eq 0 ]]; then
         echo UP TO DATE
     fi
-    
 }
 
 function write_main_files() 
