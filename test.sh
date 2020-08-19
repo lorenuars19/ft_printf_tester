@@ -56,23 +56,23 @@ ft_printf_exec_file=$WD/42.ft_printf.test
 
 function check_up_to_date ()
 {
-    echo CHECK_UP_TO_DATE
-
     checkdir=.CHECK_UP_TO_DATE_
     mkdir -p $checkdir
-    local ofile=$checkdir/.ofile_check_up_to_date
-    local nfile=$checkdir/.nfile_check_up_to_date
+    ofile=$checkdir/.ofile_check_up_to_date
+    nfile=$checkdir/.nfile_check_up_to_date
     cp $0 $ofile
-    curl https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o $nfile
+    curl -s https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o $nfile
     diff -u $ofile $nfile >/dev/null
     local diff_ret=$?
-    rm -rf $checkdir $ofile $nfile
 
-    if [[ $? -eq 1 ]]; then
+    if [[ $diff_ret -eq 1 ]]; then
         echo Downloading new update ...
-        curl https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o $0
+        curl -s https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o $ofile
+        cp $ofile $0
+    elif [[ $diff_ret -eq 0 ]]; then
+        echo UP TO DATE
     fi
-
+    
 }
 
 function write_main_files() 
@@ -428,6 +428,7 @@ function cleanup ()
 {
 	print_summary
     rm -f $printf_diff_file $printf_exec_file $printf_main_file $ft_printf_diff_file $ft_printf_exec_file $ft_printf_main_file
+    rm -rf $checkdir $ofile $nfile
     exit
 }
 
