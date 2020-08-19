@@ -465,7 +465,6 @@ function usage()
 check_up_to_date
 
 # Arg check
-BETA_TEST=0
 NO_DISPLAY=0
 MAX_TESTS=5
 _VERBOSE=0
@@ -478,7 +477,6 @@ while [[ $1 != "" ]]; do
     -t | --tests )      shift; MAX_TESTS=$1;;
     -c | --comp )       shift; _GLOBAL_MAX_=$1;;
     -d | --no-ko )      NO_DISPLAY=1;;
-    -T )                BETA_TEST=1;;
     *) usage;;
     esac
     shift
@@ -492,14 +490,6 @@ MAX_SEQ_ITEMS=$(( $_GLOBAL_MAX_/2 ))
 # Max number for flag params
 FLAG_NUM_MAX=20
 if [[ $FLAG_NUM_MAX -ge 42 ]]; then FLAG_NUM_MAX=42; fi
-
-
-if [[ $BETA_TEST -eq 1 ]]; then
-    set -x
-    write_header_file
-    echo $macro
-    exit
-fi
 
 # Delete old LOGS
 rm -f $LOG_FILE*
