@@ -71,10 +71,10 @@ function check_up_to_date ()
         read -p "New version exists do you want to update ?[Y/n]" yn
         case $yn in
             [Yy]* | * )  
-            echo Downloading new update ...
-            curl https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o $ofile
+            printf "Downloading new update ..."
+            curl -s https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o $ofile
             cp $ofile $0
-            echo Updated successfully.
+            printf " Updated successfully.\n"
             exit
             ;;
             [Nn]* ) exit;;
