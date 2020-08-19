@@ -71,6 +71,7 @@ function check_up_to_date ()
         diff -u $ofile $nfile
         curl -s https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o $ofile
         cp $ofile $0
+        exit
     elif [[ $diff_ret -eq 0 ]]; then
         echo No update
     fi
