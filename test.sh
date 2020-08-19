@@ -72,9 +72,9 @@ function check_up_to_date ()
         case $yn in
             [Yy]* | * )  
             echo Downloading new update ...
-            diff -U1 $ofile $nfile 
-            curl -s https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o $ofile
+            curl https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o $ofile
             cp $ofile $0
+            echo Updated successfully.
             exit
             ;;
             [Nn]* ) exit;;
