@@ -67,21 +67,21 @@ function check_up_to_date ()
     local diff_ret=$?
 
     if [[ $diff_ret -eq 1 ]]; then
-        while true; do
+         while true; do
         read -p "New version exists do you want to update ?[Y/n]" yn
-            case $yn in
-                [Yy]* | * )  
-                printf "\033[33mDownloading new update ..."
-                curl -s https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o $ofile
-                cp $ofile $0
-                printf " \033[32;1mUpdated successfully.\033[0m\n"
-                exit
-                ;;
-                [Nn]* ) return;;
-            esac
-        done
-    else
-        printf "\033[32;1mYou have the latest version.\033[0m\n"
+        case $yn in
+            [Nn]* ) 
+                printf "\033[033mYou cancelled the update\n"
+                return;;
+            [Yy]* | * )  
+            printf "Downloading new update ..."
+            curl -s https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o $ofile
+            cp $ofile $0
+            printf " Updated successfully.\n"
+            exit
+            ;;
+        esac
+    done
     fi
 }
 
