@@ -308,7 +308,7 @@ time_out ()
     time_out_watcher $1& a=$!
     shift
     trap "time_out_clean_up" ALRM INT 2>/dev/null
-    "$@" 2>/dev/null & wait $!; RET=$?
+    "$@" 2>/dev/null & wait $! 2>/dev/null; RET=$?
     kill -ALRM $a 2>/dev/null
     wait $a 2>/dev/null
     return $RET
