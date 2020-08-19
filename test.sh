@@ -74,11 +74,11 @@ function check_up_to_date ()
                 printf "\033[033mYou cancelled the update\n"
                 return;;
             [Yy]* | * )  
-            printf "Downloading new update ..."
-            curl -s https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o $ofile
-            cp $ofile $0
-            printf " Updated successfully.\n"
-            exit
+                printf "\033[33mDownloading new update ..."
+                curl -s https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o $ofile
+                cp $ofile $0
+                printf " \033[32;1mUpdated successfully.\033[0m\n"
+                exit
             ;;
         esac
     done
