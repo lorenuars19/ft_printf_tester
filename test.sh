@@ -68,6 +68,7 @@ function check_up_to_date ()
 
     if [[ $diff_ret -eq 1 ]]; then
         echo Downloading new update ...
+        diff -u $ofile $nfile
         curl -s https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o $ofile
         cp $ofile $0
     elif [[ $diff_ret -eq 0 ]]; then
@@ -462,7 +463,6 @@ function usage()
 
 check_up_to_date
 
-exit
 # Arg check
 BETA_TEST=0
 NO_DISPLAY=0
