@@ -72,7 +72,8 @@ function check_up_to_date ()
             case $yn in
                 [Nn]* ) 
                     printf "\033[033mYou cancelled the update\n"
-                    return;;
+                    return
+                ;;
                 [Yy]* | * )  
                     printf "\033[33mDownloading new update ..."
                     cp $nfile $0
