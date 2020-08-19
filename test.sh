@@ -69,6 +69,7 @@ function check_up_to_date ()
     rm -rf $checkdir $ofile $nfile
 
     if [[ $? -eq 1 ]]; then
+        echo Downloading new update ...
         curl https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o $0
     fi
 
