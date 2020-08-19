@@ -60,6 +60,7 @@ function check_up_to_date ()
     mkdir -p $checkdir
     ofile=$checkdir/.ofile_check_up_to_date
     nfile=$checkdir/.nfile_check_up_to_date
+    rm -f $ofile $nfile
     cp $0 $ofile
     curl -s https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o $nfile
     diff -u $ofile $nfile >/dev/null
