@@ -62,7 +62,7 @@ function check_up_to_date ()
     nfile=$checkdir/.nfile_check_up_to_date
     rm -f $ofile $nfile
     cp $0 $ofile
-    curl -s https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o $nfile
+    curl -s $1 -o $nfile
     diff -u $ofile $nfile >/dev/null
     local diff_ret=$?
 
@@ -75,8 +75,7 @@ function check_up_to_date ()
                 return;;
             [Yy]* | * )  
                 printf "\033[33mDownloading new update ..."
-                curl -s https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o $ofile
-                cp $ofile $0
+                cp $nfile $0
                 printf " \033[32;1mUpdated successfully.\033[0m\n"
                 exit
             ;;
@@ -470,7 +469,7 @@ function usage()
 }
 # ================================== Program ================================= #
 
-check_up_to_date
+check_up_to_date "https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh"
 
 # Arg check
 NO_DISPLAY=0
