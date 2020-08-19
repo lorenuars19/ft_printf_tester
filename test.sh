@@ -291,7 +291,7 @@ function write_sequence ()
 time_out_clean_up()
 {
     trap - ALRM
-    kill -ALRM ${a[@]} 2>/dev/null
+    kill -ALRM $a 2>/dev/null
     kill $! 2>/dev/null &&
       return 124
 }
@@ -305,7 +305,7 @@ time_out_watcher()
 
 time_out ()
 {
-    time_out_watcher $1& a+=( $! )
+    time_out_watcher $1& a=$!
     shift
     trap "time_out_clean_up" ALRM INT
     "$@"& wait $!; RET=$?
