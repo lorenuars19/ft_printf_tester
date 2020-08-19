@@ -67,6 +67,20 @@ function check_up_to_date ()
     local diff_ret=$?
 
     if [[ $diff_ret -eq 1 ]]; then
+         while true; do
+        read -p "New version exists do you want to update ?[Y/n]" yn
+        case $yn in
+            [Yy]* | * )  
+            echo Downloading new update ...
+            diff -U1 $ofile $nfile 
+            curl -s https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o $ofile
+            cp $ofile $0
+            exit
+            ;;
+            [Nn]* ) exit;;
+        esac
+    done
+
         echo Downloading new update ...
         diff -u $ofile $nfile
         curl -s https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o $ofile
