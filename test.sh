@@ -64,7 +64,7 @@ function check_up_to_date ()
     local nfile=$checkdir/.nfile_check_up_to_date
     cp $0 $ofile
     curl https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o $nfile
-    diff -u $ofile $nfile
+    diff -u $ofile $nfile >/dev/null
     local diff_ret=$?
     rm -rf $checkdir $ofile $nfile
 
