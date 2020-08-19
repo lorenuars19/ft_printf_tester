@@ -56,13 +56,21 @@ ft_printf_exec_file=$WD/42.ft_printf.test
 
 function check_up_to_date ()
 {
+    echo CHECK_UP_TO_DATE
+
     checkdir=.CHECK_UP_TO_DATE_
     mkdir -p $checkdir
     local ofile=$checkdir/.ofile_check_up_to_date
     local nfile=$checkdir/.nfile_check_up_to_date
     cp $0 $ofile
     curl https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o $nfile
-    diff $ofile $nfile
+    diff -u $ofile $nfile
+    local diff_ret=$?
+    rm -rf $checkdir $ofile $nfile
+
+    if [[ $? -eq 1 ]]; then
+        curl https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o $0
+    fi
 
 }
 
@@ -451,6 +459,7 @@ function usage()
 
 check_up_to_date
 
+exit
 # Arg check
 BETA_TEST=0
 NO_DISPLAY=0
