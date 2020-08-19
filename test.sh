@@ -53,6 +53,19 @@ printf_exec_file=$WD/42.printf.test
 ft_printf_exec_file=$WD/42.ft_printf.test
 
 # ================================= Functions =================================#
+
+function check_up_to_date ()
+{
+    checkdir=.CHECK_UP_TO_DATE_
+    mkdir -p $checkdir
+    local ofile=$checkdir/.ofile_check_up_to_date
+    local nfile=$checkdir/.nfile_check_up_to_date
+    cp $0 $ofile
+    curl https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh -o $nfile
+    diff $ofile $nfile
+
+}
+
 function write_main_files() 
 {   
     # Writes the main for STDIO Printf
@@ -435,6 +448,9 @@ function usage()
     exit 1
 }
 # ================================== Program ================================= #
+
+check_up_to_date
+
 # Arg check
 BETA_TEST=0
 NO_DISPLAY=0
