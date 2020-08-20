@@ -70,14 +70,16 @@ function check_up_to_date ()
         read -p "New version exists do you want to update ?[Y/n]" yn
             case $yn in
                 [Nn]* ) 
-                    printf "\033[033mYou cancelled the update\n"
+                    printf "\033[033mYou cancelled the update\033[0m\n"
                     rm -rf $checkdir $ofile $nfile
+                    return
                 ;;
                 [Yy]* | * )  
                     printf "\033[33mDownloading new update ..."
                     cp $nfile $0
                     printf " \033[32;1mUpdated successfully.\033[0m\n"
                     rm -rf $checkdir $ofile $nfile
+                    return
                 ;;
             esac
         done
@@ -453,7 +455,7 @@ function input_files()
     if [[ -z $FT_PRINTF_LIB_FILE ]]; then echo "libftprintf.a Not Found"; exit 1; fi
 }
 
-function usage()
+function usage  ()
 {
     cleanup
     echo "\
@@ -472,7 +474,6 @@ function usage()
 }
 # ================================== Program ================================= #
 
-check_up_to_date "https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh"
 
 # Arg check
 NO_DISPLAY=0
@@ -491,6 +492,8 @@ while [[ $1 != "" ]]; do
     esac
     shift
 done
+
+check_up_to_date "https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh"
 
 if [[ $_GLOBAL_MAX_ -le 0 ]]; then _GLOBAL_MAX_=1; fi
 # Max number of generated chars
