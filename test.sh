@@ -72,14 +72,12 @@ function check_up_to_date ()
                 [Nn]* ) 
                     printf "\033[033mYou cancelled the update\n"
                     rm -rf $checkdir $ofile $nfile
-                    return
                 ;;
                 [Yy]* | * )  
                     printf "\033[33mDownloading new update ..."
                     cp $nfile $0
                     printf " \033[32;1mUpdated successfully.\033[0m\n"
                     rm -rf $checkdir $ofile $nfile
-                    exit
                 ;;
             esac
         done
