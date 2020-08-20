@@ -457,7 +457,6 @@ function input_files()
 
 function usage  ()
 {
-    cleanup
     echo "\
     Usage :
         $0 -[cdtv]
@@ -471,7 +470,7 @@ function usage  ()
         $0 -t 5 -c 420 -v 2
         $0 -t 69 -c 69 -v 1
     "
-    exit 1
+    cleanup
 }
 # ================================== Program ================================= #
 # Arg check
@@ -488,7 +487,7 @@ while [[ $1 != "" ]]; do
     -c | --comp )       shift; _GLOBAL_MAX_=$1;;
     -d | --no-ko )      NO_DISPLAY=1;;
     -u | --update )     check_up_to_date "https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh" ;;
-    *) usage;;
+    *) usage ;;
     esac
     shift
 done
