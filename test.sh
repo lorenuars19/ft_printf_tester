@@ -331,7 +331,7 @@ function compile_run()
             sequence=()
             run_test $test_n
             sleep 2
-            return 1
+            return 0
         fi
     fi
     if [[ -e $printf_exec_file ]] && time_out $_TIME_OUT ./$printf_exec_file > $printf_diff_file
@@ -339,9 +339,6 @@ function compile_run()
         echo >> $printf_diff_file
     else
         STD_RET=$?
-        if [[ $_VERBOSE -ge 1 ]]; then
-            KO_NUM=$((KO_NUM + 1))
-        fi
         printf "\n= = = TEST : %-6d STDIO PRINTF TIMEOUT or EXEC ERROR %03d\n" $test_n $STD_RET >> $LOG_FILE"_"$test_n
 		echo $macro >> $LOG_FILE"_"$test_n
         return 1
