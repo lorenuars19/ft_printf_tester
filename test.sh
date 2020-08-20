@@ -18,7 +18,7 @@ CCFLAGS="-Wall -Wextra -Werror"
 # Specify the verbose level : 0 = pretty , 1 = minimal, 2 = full info 
 _VERBOSE=2
 # The time out for execution of tests
-_TIME_OUT=0.1
+_TIME_OUT=1
 # 1 = add newlines add '\n' between each items in the sequence
 WITH_NEWLINES=0
 # Max number of generated chars
