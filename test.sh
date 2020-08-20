@@ -65,19 +65,20 @@ function check_up_to_date ()
     curl -s $1 -o $nfile
     diff -u $ofile $nfile >/dev/null
     local diff_ret=$?
-
     if [[ $diff_ret -eq 1 ]]; then
         while true; do
         read -p "New version exists do you want to update ?[Y/n]" yn
             case $yn in
                 [Nn]* ) 
                     printf "\033[033mYou cancelled the update\n"
+                    rm -rf $checkdir $ofile $nfile
                     return
                 ;;
                 [Yy]* | * )  
                     printf "\033[33mDownloading new update ..."
                     cp $nfile $0
                     printf " \033[32;1mUpdated successfully.\033[0m\n"
+                    rm -rf $checkdir $ofile $nfile
                     exit
                 ;;
             esac
@@ -85,6 +86,7 @@ function check_up_to_date ()
     else
         printf "\033[32;1mYou have the latest version\033[0m\n"
     fi
+    rm -rf $checkdir $ofile $nfile
 }
 
 function write_main_files() 
@@ -446,7 +448,7 @@ function cleanup ()
 
 function input_files()
 {
-    if [[ -e Makefile ]] || [[ -e makefile ]]; then make; fi
+    if [[ -e Makefile ]] || [[ -e makefile ]]; then make 2>/dev/null; fi
     FT_PRINTF_HEADER_FILE=$( cd $WD && find ../ -type f -name "ft_printf.h" )
     if [[ -z $FT_PRINTF_HEADER_FILE ]]; then echo "ft_printf.h Not Found"; exit 1; fi
     FT_PRINTF_LIB_FILE=$( find . -name "libftprintf.a" )
