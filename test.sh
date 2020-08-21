@@ -652,7 +652,7 @@ declare -a KO_ARR TO_ARR OK_ARR
 KO_ARR=( )
 OK_ARR=( )
 TO_ARR=( )
-for (( test_n=0;test_n<$MAX_TESTS; test_n++ ))
+for (( test_n = 1 ; test_n <= $MAX_TESTS ; test_n++ ))
 do
     write_main_files
     status=3
