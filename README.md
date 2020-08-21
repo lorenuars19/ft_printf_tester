@@ -9,7 +9,7 @@ Usage :
             -t | --tests    number of tests
             -v | --verbose  verbose level [ 0 = pretty | 1 = minimal | 2 = full ]
             -u | --update   check for update and update script
-            -h | --help | * displays this message
+            -h | --help     displays this message
         Ex:
             $0 -t 420 -c 4 -v 0 -d
             $0 -t 5 -c 420 -v 2
