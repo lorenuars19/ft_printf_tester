@@ -142,8 +142,7 @@ function write_header_file()
 #ifndef HEADER_H
 # include \"$FT_PRINTF_HEADER_FILE\"
 # include <stdio.h>
-
-    " > $header_file
+" > $header_file
     # This is where all the magic happens
     write_sequence
 }
