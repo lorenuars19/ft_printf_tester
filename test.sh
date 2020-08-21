@@ -440,17 +440,29 @@ function compile_run()
     return 0
 }
 
+function validate_test ()
+{
+    if ! gcc $CCFLAGS -I. $printf_main_file -o $printf_exec_file 2>/dev/null
+    then
+        return 1
+    fi
+    return 0
+}
+
 function run_test ()
 {
-    write_header_file
+    test_valid=0
+    while [[ test_valid -eq 0 ]]
+    do
+        write_header_file
+        if validate_test
+        then
+            test_valid=1
+        fi
+    done
 
     compile_run
-    comp=$?
-    if [[ $comp -ne 0 ]]
-    then
-        printf ">C %d>" $comp
-        return $comp
-    fi
+
     printf "\n= = = TEST : %-6d = =\n" $test_n >> $LOG_FILE"_"$test_n
     echo $macro >> $LOG_FILE"_"$test_n
     if [[ $_VERBOSE -ge 1 ]]
@@ -516,7 +528,7 @@ function print_summary ()
     TO_NUM=${#TO_ARR[@]}
     TOTAL=$(( $KO_NUM + $OK_NUM + $TO_NUM ))
     local percent_ko=$(perl -e 'print '${KO_NUM}'.0 / '${test_n}'.0 * 100' )
-    printf "\nSummary : \033[32;1m%6d OK \033[31;1m%6d KO \033[33;1m%6d TO\033[37;1m%6d test_n \033[37;1m%6d TOTAL \033[m\t" $OK_NUM $KO_NUM $TO_NUM $test_n $TOTAL
+    printf "\nSummary : \033[32;1m%6d OK \033[31;1m%6d KO \033[33;1m%6d TO\033[37;1m%6d TOTAL \033[m\t" $OK_NUM $KO_NUM $TO_NUM $TOTAL
     if [[ ${percent_ko//.*} -lt 40 ]] && [[ ${percent_ko//*} != '0' ]]
     then
         printf "\033[32;1mPercent KO : %f%%\033[m\n" $percent_ko
@@ -643,11 +655,9 @@ do
     status=3
     while [[ $status -eq 3 ]]
     do
-    set -x
         run_test $test_n
         status=$?
         printf "\n<T %d %d>" $test_n $status
-        exit 
     done
 
     if [[ $status -eq 2 ]]
