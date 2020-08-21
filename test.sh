@@ -378,18 +378,18 @@ function compile_run()
     rm -f $printf_exec_file
     if [[ -e $printf_main_file ]]
     then
-        if ! gcc $CCFLAGS -I. $printf_main_file -o $printf_exec_file 2>/dev/null
+        if ! gcc $CCFLAGS -I. $printf_main_file -o $printf_exec_file #2>/dev/null
         then
             if [[ $_VERBOSE -ge 3 ]]
             then
-                printf "\nTEST : %-6d \033[31;1m STDIO PRINTF COMPILATION ERROR (tester made invalid pattern)\033[m\n" $test_n
+                printf "\nTEST : %-6d \033[34;1m STDIO PRINTF COMPILATION ERROR (tester made invalid pattern)\033[m\n" $test_n
                 echo $macro
                 gcc $CCFLAGS -I. $printf_main_file -o $printf_exec_file
             fi
             macro=''
             sequence=()
             run_test $test_n
-            return 0
+            return 3
         fi
     fi
     if [[ -e $printf_exec_file ]] && time_out $_TIME_OUT ./$printf_exec_file > $printf_diff_file
@@ -408,31 +408,38 @@ function compile_run()
         if ! gcc $CCFLAGS -I../ $ft_printf_main_file $FT_PRINTF_LIB_FILE -o $ft_printf_exec_file
         then
             printf "\033[1;31mCOMPILE ERROR\033[m\n"
-            return 3
+            return 1
         fi
     fi
     if [[ -e $ft_printf_exec_file ]] && time_out $_TIME_OUT ./$ft_printf_exec_file > $ft_printf_diff_file
     then
         echo >> $ft_printf_diff_file
+        return 0
     else
         if [[ $_VERBOSE -ge 1 ]]
         then
-            printf "\nTEST : %-6d \033[31;1m FT_printf TIME OUT or EXEC ERROR\033[m\n" $test_n
+            RET=$?
+            printf "\nTEST : %-6d \033[33;1m FT_printf TIME OUT or EXEC ERROR %03d\033[m\n" $test_n $RET
             echo $macro
             TO_NUM=$((TO_NUM + 1))
         fi
         printf "\n= = = TEST : %-6d FT_printf TIME OUT or EXEC ERROR\n" $test_n >> $LOG_FILE"_"$test_n
         echo $macro >> $LOG_FILE"_"$test_n
-        return 2
+        return 1
     fi
+    return 0
 }
 
 function run_test ()
 {
     write_header_file
-    if ! compile_run
+
+    compile_run
+    comp=$?
+    if [[ $comp -ne 0 ]]
     then
-        return 1
+        printf ">C %d>" $comp
+        return $comp
     fi
     printf "\n= = = TEST : %-6d = =\n" $test_n >> $LOG_FILE"_"$test_n
     echo $macro >> $LOG_FILE"_"$test_n
@@ -494,14 +501,20 @@ function print_summary ()
     then
         test_n=$(($test_n + 1))
     fi
+    KO_NUM=${#KO_ARR[@]}
+    OK_NUM=${#OK_ARR[@]}
+    TO_NUM=${#TO_ARR[@]}
+    TOTAL=$(( $KO_NUM + $OK_NUM + $TO_NUM ))
     local percent_ko=$(perl -e 'print '${KO_NUM}'.0 / '${test_n}'.0 * 100' )
-    printf "\nSummary : \033[32;1m%6d OK \033[31;1m%6d KO \033[33;1m%6d TO\033[37;1m%6d TOTAL\033[m\t" $OK_NUM $KO_NUM $TO_NUM $test_n
+    printf "\nSummary : \033[32;1m%6d OK \033[31;1m%6d KO \033[33;1m%6d TO\033[37;1m%6d test_n \033[37;1m%6d TOTAL \033[m\t" $OK_NUM $KO_NUM $TO_NUM $test_n $TOTAL
     if [[ ${percent_ko//.*} -lt 40 ]] && [[ ${percent_ko//*} != '0' ]]
     then
         printf "\033[32;1mPercent KO : %f%%\033[m\n" $percent_ko
     else
         printf "\033[31;1mPercent KO : %f%%\033[m\n" $percent_ko
     fi
+
+    echo ${TO_ARR[@]}
 }
 
 function cleanup ()
@@ -611,14 +624,29 @@ trap cleanup SIGINT EXIT SIGSEGV SIGABRT SIGBUS
 OK_NUM=0
 KO_NUM=0
 TO_NUM=0
-declare -a KO_ARR TO_ARR
+declare -a KO_ARR TO_ARR OK_ARR
+KO_ARR=( )
+OK_ARR=( )
+TO_ARR=( )
 for (( test_n=0;test_n<$MAX_TESTS; test_n++ ))
 do
-    run_test $test_n
-    status=$?
+    status=3
+    while [[ $status -eq 3 ]]
+    do
+        run_test $test_n
+        status=$?
+        printf "\n<T %d %d>" $test_n $status
+    done
+
     if [[ $status -eq 2 ]]
     then
         KO_ARR+=( $LOG_FILE"_"$test_n )
+    elif [[ $status -eq 1 ]]
+    then 
+        TO_ARR+=( $test_n"-"$macro )
+    elif [[ $status -eq 0 ]]
+    then
+        OK_ARR+=( $test_n )
     fi
 done
 if [[ KO_NUM -gt 0 ]]
