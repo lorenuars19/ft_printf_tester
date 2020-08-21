@@ -18,7 +18,7 @@ CCFLAGS="-Wall -Wextra -Werror"
 # Specify the verbose level : 0 = pretty , 1 = minimal, 2 = full info
 _VERBOSE=2
 # The time out for execution of tests
-_TIME_OUT=1
+_TIME_OUT=0.1
 # 1 = add newlines add '\n' between each items in the sequence
 WITH_NEWLINES=0
 # Max number of generated chars
@@ -142,6 +142,7 @@ function write_header_file()
 #ifndef HEADER_H
 # include \"$FT_PRINTF_HEADER_FILE\"
 # include <stdio.h>
+
     " > $header_file
     # This is where all the magic happens
     write_sequence
@@ -263,7 +264,7 @@ function gen_sequence ()
     for (( it=0; it<$max_items; it++ ))
     do
         local flag_or_rnd=$(($RANDOM%2))
-        if [[ $flag_or_rnd -eq 1 ]]
+        if [[ $flag_or_rnd -eq 1 ]] && [[ $_GLOBAL_MAX_ -ge 5 ]]
         then
             sequence+=( rnd )
         else
@@ -349,27 +350,32 @@ function write_sequence ()
 time_out_clean_up()
 {
     trap - ALRM
-    kill -ALRM $a 2>/dev/null
-    kill $! 2>/dev/null &&
+    kill -ALRM $a >/dev/null 2>&1
+    kill $! >/dev/null 2>&1 &&
     return 124
 }
 
 time_out_watcher()
 {
-    trap "time_out_clean_up" ALRM INT 2>/dev/null
-    sleep $1& wait 2>/dev/null
-    kill -ALRM $$ 2>/dev/null
+    trap "time_out_clean_up" ALRM >/dev/null 2>&1
+    sleep $1&
+    wait $! >/dev/null 2>&1
+    kill -ALRM $$ >/dev/null 2>&1
 }
 
 time_out ()
 {
-    time_out_watcher $1& a=$!
+    time_out_watcher $1&
+    a=$!
     shift
-    trap "time_out_clean_up" ALRM 2>/dev/null
-    "$@" 2>/dev/null & wait $! 2>/dev/null
+    trap "time_out_clean_up" ALRM >/dev/null
+    "$@"&
+    T+=( $! )
+    ps -p $! >/dev/null 2>&1
+    wait -nf $! >/dev/null 2>&1
     RET=$?
-    kill -ALRM $a 2>/dev/null
-    wait $a 2>/dev/null
+    wait -n $a >/dev/null 2>&1
+    kill -ALRM $a >/dev/null 2>&1
     return $RET
 }
 
@@ -397,14 +403,8 @@ function compile_run()
         echo >> $printf_diff_file
     else
         printf "\n= = = TEST : %-6d STDIO PRINTF TIMEOUT or EXEC ERROR %03d\n" $test_n $STD_RET >> $LOG_FILE"_"$test_n
-        if [[ -f $printf_exec_file ]]
-        then
-            echo '<'$printf_exec_file E'>'
-        else
-            echo '<'$printf_exec_file !NE!'>'
-        fi
         echo $macro >> $LOG_FILE"_"$test_n
-        return 42
+        return 1
     fi
     
     rm -f $ft_printf_exec_file
@@ -413,36 +413,33 @@ function compile_run()
         if ! gcc $CCFLAGS -I../ $ft_printf_main_file $FT_PRINTF_LIB_FILE -o $ft_printf_exec_file
         then
             printf "\033[1;31mCOMPILE ERROR\033[m\n"
-            return 43
+            return 1
         fi
     fi
     if [[ -f $ft_printf_exec_file ]] && time_out $_TIME_OUT ./$ft_printf_exec_file > $ft_printf_diff_file && RET=$?
     then
         echo >> $ft_printf_diff_file
-        return 0
     else
         if [[ $_VERBOSE -ge 1 ]]
         then
             printf "\nTEST : %-6d \033[33;1m FT_printf TIME OUT or EXEC ERROR %03d\033[m\n" $test_n $RET
             echo $macro
-            if [[ -f $ft_printf_exec_file ]]
-        then
-            echo '<'$ft_printf_exec_file E'>'
-        else
-            echo '<'$ft_printf_exec_file !NE!'>'
-        fi
             TO_NUM=$((TO_NUM + 1))
         fi
         printf "\n= = = TEST : %-6d FT_printf TIME OUT or EXEC ERROR %03d\n" $test_n $RET >> $LOG_FILE"_"$test_n
         echo $macro >> $LOG_FILE"_"$test_n
-        return 44
+        return 1
     fi
     return 0
 }
 
 function validate_test ()
 {
-    if ! gcc $CCFLAGS -I. $printf_main_file -o $printf_exec_file 2>/dev/null
+    if [[ $_VERBOSE -ge 3 ]]
+    then
+        gcc $CCFLAGS -I. $printf_main_file -o $printf_exec_file
+    fi
+    if ! gcc $CCFLAGS -I. $printf_main_file -o $printf_exec_file >/dev/null 2>&1
     then
         return 1
     fi
@@ -454,15 +451,16 @@ function run_test ()
     test_valid=0
     while [[ test_valid -eq 0 ]]
     do
+        write_main_files
         write_header_file
         if validate_test
         then
             test_valid=1
         fi
     done
-
+    
     compile_run
-
+    
     printf "\n= = = TEST : %-6d = =\n" $test_n >> $LOG_FILE"_"$test_n
     echo $macro >> $LOG_FILE"_"$test_n
     if [[ $_VERBOSE -ge 1 ]]
@@ -471,7 +469,7 @@ function run_test ()
     fi
     if [[ -e $ft_printf_diff_file ]] && [[ -e $printf_diff_file ]]
     then
-        diff -a -s -u --label FT_42 $ft_printf_diff_file --label STDIO $printf_diff_file >> $LOG_FILE"_"$test_n
+        diff -a -s -u  --label STDIO $printf_diff_file --label FT_42 $ft_printf_diff_file >> $LOG_FILE"_"$test_n
     fi
     if [[ $? -eq 0 ]]
     then
@@ -502,9 +500,9 @@ function run_test ()
                 then
                     if [[ $(uname) == "Linux" ]]
                     then
-                        diff --color=always -a -u --label FT_42 $ft_printf_diff_file --label STDIO $printf_diff_file
+                        diff --suppress-blank-empty -w -B --color=always -a -u  --label STDIO $printf_diff_file --label FT_42 $ft_printf_diff_file
                     else
-                        diff -a -u --label FT_42 $ft_printf_diff_file --label STDIO $printf_diff_file
+                        diff -a -u  --label STDIO $printf_diff_file --label FT_42 $ft_printf_diff_file
                     fi
                 fi
             fi
@@ -529,13 +527,13 @@ function print_summary ()
     TOTAL=$(( $KO_NUM + $OK_NUM + $TO_NUM ))
     local percent_ko=$(perl -e 'print '${KO_NUM}'.0 / '${test_n}'.0 * 100' )
     printf "\nSummary : \033[32;1m%6d OK \033[31;1m%6d KO \033[33;1m%6d TO\033[37;1m%6d TOTAL \033[m\t" $OK_NUM $KO_NUM $TO_NUM $TOTAL
-    if [[ ${percent_ko//.*} -lt 40 ]] && [[ ${percent_ko//*} != '0' ]]
+    if [[ ${percent_ko//.*} -lt 20 ]] && [[ ${percent_ko//*} != '0' ]]
     then
         printf "\033[32;1mPercent KO : %f%%\033[m\n" $percent_ko
     else
         printf "\033[31;1mPercent KO : %f%%\033[m\n" $percent_ko
     fi
-
+    
     echo ${TO_ARR[@]}
 }
 
@@ -544,6 +542,7 @@ function cleanup ()
     print_summary
     rm -f $printf_diff_file $printf_exec_file $printf_main_file $ft_printf_diff_file $ft_printf_exec_file $ft_printf_main_file
     rm -rf $checkdir $ofile $nfile
+    kill ${T[@]} 2>/dev/null
     exit
 }
 
@@ -577,7 +576,7 @@ function usage  ()
         -t | --tests    number of tests
         -v | --verbose  verbose level [ 0 = pretty | 1 = minimal | 2 = full ]
         -u | --update   check for update and update script
-        -h | --help | * displays this message
+        -h | --help     displays this message
     Ex:
         $0 -t 420 -c 4 -v 0 -d
         $0 -t 5 -c 420 -v 2
@@ -586,6 +585,9 @@ function usage  ()
     cleanup
 }
 # ================================== Program ================================= #
+
+# set -vbT
+
 # Arg check
 NO_DISPLAY=0
 MAX_TESTS=5
@@ -618,14 +620,14 @@ do
     shift
 done
 
-if [[ $_GLOBAL_MAX_ -le 0 ]]
+if [[ $_GLOBAL_MAX_ -le 1 ]]
 then
     _GLOBAL_MAX_=1
 fi
 # Max number of generated chars
-MAX_RND_CHARS=$(( 1 + ($_GLOBAL_MAX_/10 )))
+MAX_RND_CHARS=$(( 1 + ($_GLOBAL_MAX_/10) ))
 # Max number of sequence items
-MAX_SEQ_ITEMS=$(( $_GLOBAL_MAX_/2 ))
+MAX_SEQ_ITEMS=$(( $_GLOBAL_MAX_ ))
 # Max number for flag params
 FLAG_NUM_MAX=20
 if [[ $FLAG_NUM_MAX -ge 42 ]]
@@ -638,7 +640,7 @@ rm -f $LOG_FILE*
 mkdir -p $WD $LOG_DIR
 # Run make & Check input files
 input_files
-# Write files
+
 write_main_files
 # Set up cleanup
 trap cleanup SIGINT EXIT SIGSEGV SIGABRT SIGBUS
@@ -652,19 +654,19 @@ OK_ARR=( )
 TO_ARR=( )
 for (( test_n=0;test_n<$MAX_TESTS; test_n++ ))
 do
+    write_main_files
     status=3
     while [[ $status -eq 3 ]]
     do
         run_test $test_n
         status=$?
-        printf "\n<T %d %d>" $test_n $status
     done
-
+    
     if [[ $status -eq 2 ]]
     then
         KO_ARR+=( $LOG_FILE"_"$test_n )
     elif [[ $status -eq 1 ]]
-    then 
+    then
         TO_ARR+=( $test_n )
     elif [[ $status -eq 0 ]]
     then
