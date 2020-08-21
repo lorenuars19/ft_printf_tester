@@ -107,7 +107,7 @@ int		main(void)
 	printf(TEST);
 	return (0);
 }
-    " >> $printf_main_file
+    " > $printf_main_file
     # Writes the main for your ft_printf
     rm -f $ft_printf_main_file
     echo "\
@@ -124,7 +124,7 @@ int		main(void)
 	ft_printf(TEST);
 	return (0);
 }
-    " >> $ft_printf_main_file
+    " > $ft_printf_main_file
 }
 
 function write_header_file()
@@ -142,7 +142,7 @@ function write_header_file()
 #ifndef HEADER_H
 # include \"$FT_PRINTF_HEADER_FILE\"
 # include <stdio.h>
-    " >> $header_file
+    " > $header_file
     # This is where all the magic happens
     write_sequence
 }
@@ -356,7 +356,7 @@ time_out_clean_up()
 
 time_out_watcher()
 {
-    trap "time_out_clean_up" ALRM 2>/dev/null
+    trap "time_out_clean_up" ALRM INT 2>/dev/null
     sleep $1& wait 2>/dev/null
     kill -ALRM $$ 2>/dev/null
 }
@@ -376,9 +376,9 @@ time_out ()
 function compile_run()
 {
     rm -f $printf_exec_file
-    if [[ -e $printf_main_file ]]
+    if [[ -f $printf_main_file ]]
     then
-        if ! gcc $CCFLAGS -I. $printf_main_file -o $printf_exec_file #2>/dev/null
+        if ! gcc $CCFLAGS -I. $printf_main_file -o $printf_exec_file 2>/dev/null
         then
             if [[ $_VERBOSE -ge 3 ]]
             then
@@ -392,40 +392,50 @@ function compile_run()
             return 3
         fi
     fi
-    if [[ -e $printf_exec_file ]] && time_out $_TIME_OUT ./$printf_exec_file > $printf_diff_file
+    if [[ -f $printf_exec_file ]] && time_out $_TIME_OUT ./$printf_exec_file > $printf_diff_file && STD_RET=$?
     then
         echo >> $printf_diff_file
     else
-        STD_RET=$?
         printf "\n= = = TEST : %-6d STDIO PRINTF TIMEOUT or EXEC ERROR %03d\n" $test_n $STD_RET >> $LOG_FILE"_"$test_n
+        if [[ -f $printf_exec_file ]]
+        then
+            echo '<'$printf_exec_file E'>'
+        else
+            echo '<'$printf_exec_file !NE!'>'
+        fi
         echo $macro >> $LOG_FILE"_"$test_n
-        return 1
+        return 42
     fi
     
     rm -f $ft_printf_exec_file
-    if [[ -e $ft_printf_main_file ]]
+    if [[ -f $ft_printf_main_file ]]
     then
         if ! gcc $CCFLAGS -I../ $ft_printf_main_file $FT_PRINTF_LIB_FILE -o $ft_printf_exec_file
         then
             printf "\033[1;31mCOMPILE ERROR\033[m\n"
-            return 1
+            return 43
         fi
     fi
-    if [[ -e $ft_printf_exec_file ]] && time_out $_TIME_OUT ./$ft_printf_exec_file > $ft_printf_diff_file
+    if [[ -f $ft_printf_exec_file ]] && time_out $_TIME_OUT ./$ft_printf_exec_file > $ft_printf_diff_file && RET=$?
     then
         echo >> $ft_printf_diff_file
         return 0
     else
         if [[ $_VERBOSE -ge 1 ]]
         then
-            RET=$?
             printf "\nTEST : %-6d \033[33;1m FT_printf TIME OUT or EXEC ERROR %03d\033[m\n" $test_n $RET
             echo $macro
+            if [[ -f $ft_printf_exec_file ]]
+        then
+            echo '<'$ft_printf_exec_file E'>'
+        else
+            echo '<'$ft_printf_exec_file !NE!'>'
+        fi
             TO_NUM=$((TO_NUM + 1))
         fi
-        printf "\n= = = TEST : %-6d FT_printf TIME OUT or EXEC ERROR\n" $test_n >> $LOG_FILE"_"$test_n
+        printf "\n= = = TEST : %-6d FT_printf TIME OUT or EXEC ERROR %03d\n" $test_n $RET >> $LOG_FILE"_"$test_n
         echo $macro >> $LOG_FILE"_"$test_n
-        return 1
+        return 44
     fi
     return 0
 }
@@ -633,9 +643,11 @@ do
     status=3
     while [[ $status -eq 3 ]]
     do
+    set -x
         run_test $test_n
         status=$?
         printf "\n<T %d %d>" $test_n $status
+        exit 
     done
 
     if [[ $status -eq 2 ]]
@@ -643,7 +655,7 @@ do
         KO_ARR+=( $LOG_FILE"_"$test_n )
     elif [[ $status -eq 1 ]]
     then 
-        TO_ARR+=( $test_n"-"$macro )
+        TO_ARR+=( $test_n )
     elif [[ $status -eq 0 ]]
     then
         OK_ARR+=( $test_n )
