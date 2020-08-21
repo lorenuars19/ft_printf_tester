@@ -92,8 +92,10 @@ function check_up_to_date ()
 function write_main_files()
 {
     # Writes the main for STDIO Printf
-    rm -f $printf_main_file
-    echo "\
+    if [[ ! -f $printf_main_file ]]
+    then
+        rm -f $printf_main_file
+        echo "\
 /*
 ** Main for testing the stdio printf
 **
@@ -108,7 +110,10 @@ int		main(void)
 	return (0);
 }
     " > $printf_main_file
+    fi
     # Writes the main for your ft_printf
+    if [[ ! -f $ft_printf_main_file ]]
+    then
     rm -f $ft_printf_main_file
     echo "\
 /*
@@ -125,6 +130,7 @@ int		main(void)
 	return (0);
 }
     " > $ft_printf_main_file
+    fi
 }
 
 function write_header_file()
@@ -370,10 +376,15 @@ time_out ()
     trap "time_out_clean_up" ALRM >/dev/null
     "$@"&
     T+=( $! )
-    ps -p $! >/dev/null 2>&1
-    wait -nf $! >/dev/null 2>&1
+    if ps -p $! >/dev/null 2>&1
+    then
+        wait -nf $! >/dev/null 2>&1
+    fi
     RET=$?
-    wait -n $a >/dev/null 2>&1
+    if ps -p $a >/dev/null 2>&1
+    then
+        wait -n $a >/dev/null 2>&1
+    fi
     kill -ALRM $a >/dev/null 2>&1
     return $RET
 }
@@ -401,7 +412,7 @@ function compile_run()
     then
         echo >> $printf_diff_file
     else
-        printf "\n= = = TEST : %-6d STDIO PRINTF TIMEOUT or EXEC ERROR %03d\n" $test_n $STD_RET >> $LOG_FILE"_"$test_n
+        printf "\n= = = TEST : %-6d STDIO PRINTF TIMEOUT or EXEC ERROR %3d\n" $test_n $STD_RET >> $LOG_FILE"_"$test_n
         echo $macro >> $LOG_FILE"_"$test_n
         return 1
     fi
@@ -421,11 +432,14 @@ function compile_run()
     else
         if [[ $_VERBOSE -ge 1 ]]
         then
-            printf "\nTEST : %-6d \033[33;1m FT_printf TIME OUT or EXEC ERROR %03d\033[m\n" $test_n $RET
+            printf "\nTEST : %-6d \033[33;1m FT_printf TIME OUT or EXEC ERROR %3d\033[m\n" $test_n $RET
             echo $macro
             TO_NUM=$((TO_NUM + 1))
+        elif [[ $_VERBOSE -ge 0 ]]
+        then
+            printf "\033[33;1m&%d \033[0m" $test_n
         fi
-        printf "\n= = = TEST : %-6d FT_printf TIME OUT or EXEC ERROR %03d\n" $test_n $RET >> $LOG_FILE"_"$test_n
+        printf "\n= = = TEST : %-6d FT_printf TIME OUT or EXEC ERROR %3d\n" $test_n $RET >> $LOG_FILE"_"$test_n
         echo $macro >> $LOG_FILE"_"$test_n
         return 1
     fi
@@ -458,7 +472,10 @@ function run_test ()
         fi
     done
     
-    compile_run
+    if ! compile_run
+    then
+        return $?
+    fi
     
     printf "\n= = = TEST : %-6d = =\n" $test_n >> $LOG_FILE"_"$test_n
     echo $macro >> $LOG_FILE"_"$test_n
@@ -483,7 +500,7 @@ function run_test ()
             fi
         elif [[ $_VERBOSE -eq 0 ]]
         then
-            printf "\033[32;1m*\033[m"
+            printf "\033[32;1m*%d \033[m" $test_n
         fi
         echo OK >> $LOG_FILE"_"$test_n
         OK_NUM=$((OK_NUM + 1))
@@ -507,7 +524,7 @@ function run_test ()
             fi
         elif [[ $_VERBOSE -eq 0 ]]
         then
-            printf "\033[31;1m!%-6d\033[m" $test_n
+            printf "\033[31;1m!%d \033[m" $test_n
         fi
         KO_NUM=$((KO_NUM + 1))
         return 2
@@ -624,7 +641,7 @@ then
     _GLOBAL_MAX_=1
 fi
 # Max number of generated chars
-MAX_RND_CHARS=$(( 1 + ($_GLOBAL_MAX_/10) ))
+MAX_RND_CHARS=$(( 1 + ($_GLOBAL_MAX_) ))
 # Max number of sequence items
 MAX_SEQ_ITEMS=$(( $_GLOBAL_MAX_ ))
 # Max number for flag params
