@@ -109,13 +109,13 @@ int		main(void)
 	printf(TEST);
 	return (0);
 }
-    " > $printf_main_file
+        " > $printf_main_file
     fi
     # Writes the main for your ft_printf
     if [[ ! -f $ft_printf_main_file ]]
     then
-    rm -f $ft_printf_main_file
-    echo "\
+        rm -f $ft_printf_main_file
+        echo "\
 /*
 ** Main for testing your ft_printf
 **
@@ -129,7 +129,7 @@ int		main(void)
 	ft_printf(TEST);
 	return (0);
 }
-    " > $ft_printf_main_file
+        " > $ft_printf_main_file
     fi
 }
 
@@ -148,7 +148,7 @@ function write_header_file()
 #ifndef HEADER_H
 # include \"$FT_PRINTF_HEADER_FILE\"
 # include <stdio.h>
-" > $header_file
+    " > $header_file
     # This is where all the magic happens
     write_sequence
 }
@@ -407,26 +407,33 @@ function compile_run()
             run_test $test_n
             return 3
         fi
-    fi
-    if [[ -f $printf_exec_file ]] && time_out $_TIME_OUT ./$printf_exec_file > $printf_diff_file && STD_RET=$?
+    fi  
+    
+    if [[ -f $printf_exec_file ]] && time_out $_TIME_OUT ./$printf_exec_file > $printf_diff_file ; STD_RET=$?
     then
         echo >> $printf_diff_file
     else
         printf "\n= = = TEST : %-6d STDIO PRINTF TIMEOUT or EXEC ERROR %3d\n" $test_n $STD_RET >> $LOG_FILE"_"$test_n
         echo $macro >> $LOG_FILE"_"$test_n
+        if [[ $_VERBOSE -ge 1 ]]
+        then
+            printf "\n= = = TEST : %-6d \033[33;1m STDIO PRINTF TIMEOUT or EXEC ERROR %3d\033[m\n" $test_n $STD_RET >> $LOG_FILE"_"$test_n
+            echo $macro >> $LOG_FILE"_"$test_n
+        fi
         return 1
     fi
-    
+
     rm -f $ft_printf_exec_file
     if [[ -f $ft_printf_main_file ]]
     then
         if ! gcc $CCFLAGS -I../ $ft_printf_main_file $FT_PRINTF_LIB_FILE -o $ft_printf_exec_file
         then
-            printf "\033[1;31mCOMPILE ERROR\033[m\n"
-            return 1
+            printf "\033[1;31m FT_PRINTF : COMPILE ERROR\033[m\n"
+            return 2
         fi
     fi
-    if [[ -f $ft_printf_exec_file ]] && time_out $_TIME_OUT ./$ft_printf_exec_file > $ft_printf_diff_file && RET=$?
+
+    if [[ -f $ft_printf_exec_file ]] && time_out $_TIME_OUT ./$ft_printf_exec_file > $ft_printf_diff_file ; RET=$?
     then
         echo >> $ft_printf_diff_file
     else
@@ -443,6 +450,7 @@ function compile_run()
         echo $macro >> $LOG_FILE"_"$test_n
         return 1
     fi
+    
     return 0
 }
 
@@ -629,16 +637,17 @@ do
         -d | --no-ko )
         NO_DISPLAY=1;;
         -u | --update )
-        check_up_to_date "https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh";;
+            check_up_to_date "https://raw.githubusercontent.com/lorenuars19/ft_printf_tester/master/test.sh"
+        exit;;
         -h | --help | *)
         usage;;
     esac
     shift
 done
 
-if [[ $_GLOBAL_MAX_ -le 1 ]]
+if [[ $_GLOBAL_MAX_ -lt 0 ]]
 then
-    _GLOBAL_MAX_=1
+    _GLOBAL_MAX_=0
 fi
 # Max number of generated chars
 MAX_RND_CHARS=$(( 1 + ($_GLOBAL_MAX_) ))
