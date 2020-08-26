@@ -106,7 +106,7 @@ function write_main_files()
 
 int		main(void)
 {
-	printf(TEST);
+	printf(\"< Return %08d >\n\", printf(\"|\" TEST));
 	return (0);
 }
         " > $printf_main_file
@@ -126,7 +126,7 @@ int		main(void)
 
 int		main(void)
 {
-	ft_printf(TEST);
+	ft_printf(\"< Return %08d >\n\", ft_printf(\"|\" TEST ));
 	return (0);
 }
         " > $ft_printf_main_file
@@ -320,7 +320,7 @@ function write_sequence ()
 {
     set -f
     local sep=", "
-    macro="# define TEST \"|"
+    macro="# define TEST \""
     gen_sequence
     for (( se=0; se<${#sequence[@]}; se++ ))
     do
