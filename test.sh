@@ -660,7 +660,7 @@ then
     FLAG_NUM_MAX=42
 fi
 # Delete old LOGS
-rm -f $LOG_FILE*
+rm -rf $LOG_DIR
 # Create Working Directory
 mkdir -p $WD $LOG_DIR
 # Run make & Check input files
