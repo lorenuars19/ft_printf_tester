@@ -106,7 +106,7 @@ function write_main_files()
 
 int		main(void)
 {
-	printf(\"< Return %08d >\n\", printf(\"|\" TEST));
+	printf(\"|\n< Return %08d >\n\", printf(\"|\" TEST));
 	return (0);
 }
         " > $printf_main_file
@@ -126,7 +126,7 @@ int		main(void)
 
 int		main(void)
 {
-	ft_printf(\"< Return %08d >\n\", ft_printf(\"|\" TEST ));
+	ft_printf(\"|\n< Return %08d >\n\", ft_printf(\"|\" TEST ));
 	return (0);
 }
         " > $ft_printf_main_file
@@ -327,7 +327,7 @@ function write_sequence ()
         gen_flag ${sequence[$se]}
         macro+="$flag"
     done
-    macro+=" |\n\""$sep
+    macro+="\""$sep
     se=0
     while (( $se<${#sequence[@]} ))
     do
