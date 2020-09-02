@@ -574,7 +574,7 @@ function input_files()
 {
     if [[ -e Makefile ]] || [[ -e makefile ]]
     then
-        make
+        make re
     fi
     FT_PRINTF_HEADER_FILE=$( cd $WD && find ../ -type f -name "ft_printf.h" )
     if [[ -z $FT_PRINTF_HEADER_FILE ]]
