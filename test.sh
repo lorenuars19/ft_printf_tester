@@ -264,7 +264,7 @@ function gen_sequence ()
 {
     sequence=( )
     local max_items=$MAX_SEQ_ITEMS
-    local zero_items=( ZR SP NO )
+    local zero_items=( ZR NO )
     local conv_items=( CV_NUM CV_STR CV_CHR CV_PTR )
     for (( it=0; it<$max_items; it++ ))
     do
