@@ -281,7 +281,7 @@ function gen_sequence ()
             
             if [[ $has_precision -eq 1 ]]
             then
-                zero_items=( SP NO )
+                zero_items=( NO )
             fi
             if [[ $conv = "CV_STR" ]] || [[ $conv = "CV_CHR" ]] || [[ $conv = "CV_PTR" ]]
             then
