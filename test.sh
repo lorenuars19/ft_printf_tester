@@ -278,7 +278,7 @@ function gen_sequence ()
             local fw_star=$(($RANDOM%2))
             local pr_star=$(($RANDOM%2))
             local conv=${conv_items[$(($RANDOM%${#conv_items[@]}))]}
-            
+
             if [[ $has_precision -eq 1 ]]
             then
                 zero_items=( NO )
@@ -291,10 +291,10 @@ function gen_sequence ()
             then
                 has_precision=0
             fi
-            
+
             local zero_space_nothing=${zero_items[$(($RANDOM%${#zero_items[@]}))]}
             sequence+=( $zero_space_nothing )
-            
+
             if [[ $fw_star -eq 1 ]]
             then
                 sequence+=( ST_FW )
@@ -407,8 +407,8 @@ function compile_run()
             run_test $test_n
             return 3
         fi
-    fi  
-    
+    fi
+
     if [[ -f $printf_exec_file ]] && time_out $_TIME_OUT ./$printf_exec_file > $printf_diff_file ; STD_RET=$?
     then
         echo >> $printf_diff_file
@@ -450,7 +450,7 @@ function compile_run()
         echo $macro >> $LOG_FILE"_"$test_n
         return 1
     fi
-    
+
     return 0
 }
 
@@ -479,12 +479,12 @@ function run_test ()
             test_valid=1
         fi
     done
-    
+
     if ! compile_run
     then
         return $?
     fi
-    
+
     printf "\n= = = TEST : %-6d = =\n" $test_n >> $LOG_FILE"_"$test_n
     echo $macro >> $LOG_FILE"_"$test_n
     if [[ $_VERBOSE -ge 1 ]]
@@ -557,7 +557,7 @@ function print_summary ()
     else
         printf "\033[31;1mPercent KO : %f%%\033[m\n" $percent_ko
     fi
-    
+
     echo ${TO_ARR[@]}
 }
 
@@ -686,7 +686,7 @@ do
         run_test $test_n
         status=$?
     done
-    
+
     if [[ $status -eq 2 ]]
     then
         KO_ARR+=( $LOG_FILE"_"$test_n )
@@ -705,7 +705,7 @@ then
     && echo "cat "${KO_ARR[@]}" | less" > $LOG_DISPLAY_FILE \
     && chmod 775 $LOG_DISPLAY_FILE
     printf "\033[36;1m\n./%s\n\033[mTo display KO Logs at anytime\n" $LOG_DISPLAY_FILE
-    
+
     while true && [[ $NO_DISPLAY -eq 0 ]]
     do
         read -p "Do you want to display all the logs of the failed tests in less ?[y/N]" yn
